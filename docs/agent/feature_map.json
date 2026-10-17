@@ -179,6 +179,252 @@
           "stderrContains": ["invalid-account"]
         }
       ]
+    },
+    {
+      "id": "terminal.transactions.manage",
+      "name": "Record, correct, and clear manual purchases",
+      "prerequisites": [
+        "Use a new temporary database and synthetic values only.",
+        "Capture transactionId and transactionRevision from transaction JSON when captureTransaction is true.",
+        "Use accountId from the account JSON. Confirm each script write."
+      ],
+      "sourceFiles": [
+        "src/cli/transactions.ts",
+        "src/cli/parse.ts",
+        "src/cli/prompts.ts",
+        "src/application/transactions.ts",
+        "src/storage/transactions.ts"
+      ],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": ["\"ok\":true"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "add",
+            "--name",
+            "Synthetic transaction cash",
+            "--kind",
+            "cash",
+            "--opening",
+            "1000",
+            "--as-of",
+            "2026-10-16",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "captureTransaction": false,
+          "stdoutContains": ["\"openingCents\":100000"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "add",
+            "--account",
+            "${accountId}",
+            "--date",
+            "2026-10-15",
+            "--amount",
+            "-60",
+            "--payee",
+            "Synthetic pending shop",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": true,
+          "stdoutContains": ["\"postedOn\":null", "\"revision\":1"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "add",
+            "--account",
+            "${accountId}",
+            "--date",
+            "2026-10-17",
+            "--amount",
+            "-25",
+            "--payee",
+            "Synthetic posted shop",
+            "--posted-on",
+            "2026-10-17",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": ["\"cents\":-2500"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "register", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [
+            "\"workingCents\":91500",
+            "\"clearedCents\":97500",
+            "\"unclearedCents\":-6000",
+            "${transactionId}"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "clear",
+            "${transactionId}",
+            "--posted-on",
+            "2026-10-16",
+            "--expected-version",
+            "${transactionRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 2,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [],
+          "stderrContains": ["posting-in-opening-period"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "clear",
+            "${transactionId}",
+            "--posted-on",
+            "2026-10-17",
+            "--expected-version",
+            "${transactionRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": true,
+          "stdoutContains": ["${transactionId}", "\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "edit",
+            "${transactionId}",
+            "--date",
+            "2026-10-15",
+            "--amount",
+            "-55",
+            "--payee",
+            "Synthetic corrected shop",
+            "--memo",
+            "",
+            "--expected-version",
+            "${transactionRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": true,
+          "stdoutContains": ["${transactionId}", "\"postedOn\":\"2026-10-17\"", "\"revision\":3"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "unclear",
+            "${transactionId}",
+            "--expected-version",
+            "${transactionRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": true,
+          "stdoutContains": ["${transactionId}", "\"postedOn\":null", "\"revision\":4"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "register", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [
+            "\"workingCents\":92000",
+            "\"clearedCents\":97500",
+            "\"unclearedCents\":-5500"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "unclear",
+            "${transactionId}",
+            "--expected-version",
+            "1",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [],
+          "stderrContains": ["stale-version"]
+        }
+      ]
     }
   ]
 }

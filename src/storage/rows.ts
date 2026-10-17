@@ -68,3 +68,28 @@ export function parseTransactionRow(value: unknown): RegisterEntry {
     postedOn: value.postedOn,
   };
 }
+
+export function parseManualTransactionRow(
+  value: unknown,
+): import("../application/ports.js").ManualTransaction {
+  const entry = parseTransactionRow(value);
+  if (
+    !isRecord(value) ||
+    !entry.id ||
+    !entry.accountId ||
+    typeof value.payee !== "string" ||
+    !value.payee.trim() ||
+    typeof value.memo !== "string"
+  )
+    throw new Error("Invalid transaction metadata");
+  const revision = parseInteger(value.revision);
+  if (revision < 1) throw new Error("Invalid transaction revision");
+  return {
+    ...entry,
+    payee: value.payee,
+    memo: value.memo,
+    revision,
+    createdAt: parseTimestamp(value.createdAt),
+    updatedAt: parseTimestamp(value.updatedAt),
+  };
+}

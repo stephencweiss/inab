@@ -59,6 +59,8 @@ export async function completeCommand(
   today: string,
 ): Promise<TerminalCommand> {
   const value = { ...command };
+  if (value.action.startsWith("transaction-") || value.action === "register")
+    return completeTransaction(value, prompts, today);
   if (["show", "rename", "opening"].includes(value.action))
     value.id = await required(value.id, "Account ID (or cancel): ", prompts);
   if (value.action === "rename" || value.action === "opening")
@@ -84,4 +86,49 @@ export async function confirmWrite(command: TerminalCommand, prompts: TerminalPr
   if (!prompts.interactive)
     throw new InvalidInput("Write requires --confirm in noninteractive mode");
   return (await prompts.ask("Apply this change? [yes/no] (or cancel): ")).toLowerCase() === "yes";
+}
+
+async function completeTransaction(
+  value: TerminalCommand,
+  prompts: TerminalPrompts,
+  today: string,
+) {
+  if (value.action === "transaction-add")
+    value.accountId = await required(value.accountId, "Account ID (or cancel): ", prompts);
+  else
+    value.id = await required(
+      value.id,
+      value.action === "register" ? "Account ID (or cancel): " : "Transaction ID (or cancel): ",
+      prompts,
+    );
+  if (value.action === "register") return value;
+  if (value.action !== "transaction-add") await completeVersion(value, prompts);
+  if (value.action === "transaction-add" || value.action === "transaction-edit")
+    await completeTransactionFields(value, prompts, today);
+  if (value.action === "transaction-clear" && value.postedOn === null) {
+    if (!prompts.interactive) throw new InvalidInput("Scripts require --posted-on YYYY-MM-DD");
+    value.postedOn = (await prompts.ask(`Posting date [${today}] (or cancel): `)) || today;
+  }
+  return value;
+}
+
+async function completeTransactionFields(
+  value: TerminalCommand,
+  prompts: TerminalPrompts,
+  today: string,
+) {
+  if (value.date === null) {
+    if (!prompts.interactive) throw new InvalidInput("Scripts require --date YYYY-MM-DD");
+    value.date = (await prompts.ask(`Occurrence date [${today}] (or cancel): `)) || today;
+  }
+  value.opening = await required(
+    value.opening,
+    "Signed USD amount; inflow positive, outflow and credit debt negative (or cancel): ",
+    prompts,
+  );
+  value.payee = await required(value.payee, "Payee (or cancel): ", prompts);
+  value.memo =
+    value.action === "transaction-add"
+      ? (value.memo ?? "")
+      : await required(value.memo, "Memo; empty clears it (or cancel): ", prompts);
 }

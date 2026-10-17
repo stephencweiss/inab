@@ -131,3 +131,21 @@ Scope: local account create/list/show/rename/opening commands, application-owned
 Independent specification and code quality reviews approved Task 6 with no remaining material findings. The lead agent ran the final full check: 22 test files and 222 tests passed, with all checks and the build passing.
 
 Task 6 is complete. The task commit is `feat: manage local accounts from the terminal`. Task 7 remains open. The four accepted development-dependency audit findings remain unchanged.
+
+
+## October 17, 2026 — Task 7 implementation
+
+Scope: manual Cash/Credit transaction add, edit, clear, unclear, and register commands. Reconciliation commands and invalidation remain for Tasks 8 and 9.
+
+- Red: `npm test -- tests/integration/transactions.test.ts tests/cli/transactions.test.ts` failed because the application module was absent and the CLI rejected `--account`.
+- Core green: the initial three focused tests passed with exact USD parsing, separate permanent IDs, working 91500 / cleared 97500 / uncleared -6000 after subprocess restarts, corrections, clearing, stale previews, overflow rejection, and audit rollback.
+- Expanded tests cover old pending activity, posting boundaries, future activity, signed credit balances, cleared/uncleared overflow, metadata preservation, reconciliation guards, missing script input, and strict flags. The hand-written transaction map executes real commands and captures transaction IDs/revisions before each later edit.
+- A timestamp precision regression failed before the ordering fix. Register order compares occurrence date, chronological creation time, and ID. A second regression proved that different account/register sum ordering could make account inspection fail after a safe correction. Both paths now use the same pure ordering helper; both regressions pass.
+- Transaction mutation, account revision advance, and before/after audit evidence share an immediate write transaction. Confirmation rechecks transaction and account revisions and validates the current register before saving. Reads use one database snapshot.
+- Temporary protection: when reconciliation evidence exists, changes to cleared amounts or posting dates are refused. Pending changes and payee/memo-only corrections remain available. Existing evidence is retained. Task 9 will replace this conservative guard with affected-check invalidation.
+
+- Verification: lint, typecheck, and six focused suites passed 33 tests. The lead agent's final `npm run check` passed all document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 24 test files and 232 tests.
+- The first full run overlapped the specification review's focused tests. Two existing account CLI tests and one reviewer CLI test exceeded the five-second test limit, with no assertion failures. The full suite passed when run alone; no timeout setting was changed.
+- Independent specification and code quality reviews approved Task 7 with no material findings. The specification reviewer also verified Ctrl+C at transaction confirmation in a real terminal: exit 0 and an empty register.
+
+Task 7 is complete. The task commit is `feat: record and clear manual transactions`. Task 8 remains open. The four accepted dependency audit findings remain unchanged.

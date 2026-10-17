@@ -2,7 +2,7 @@
 
 A personal envelope-budgeting app for one household. Terminal first; protected family web access later.
 
-Status: local account creation, inspection, rename, and opening correction work from the terminal. Private database initialization, migrations, and the check baseline are installed.
+Status: local account creation, inspection, corrections, and manual transaction registers work from the terminal. Private database initialization, migrations, and the check baseline are installed.
 
 Run `npm run inab -- --help` for command status. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
@@ -38,7 +38,7 @@ Use the returned account ID and current revision for edits. Duplicate names rema
 
 In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `cancel`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
 
-Opening corrections reject posted entries inside the new opening period. Corrections also stop when reconciliation evidence exists; its review workflow comes later. Transaction, snapshot, and reconciliation commands remain planned. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
+Opening corrections reject posted entries inside the new opening period. Corrections also stop when reconciliation evidence exists; its review workflow comes later. Snapshot and reconciliation commands remain planned. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
 
 ## Conventions
 
@@ -52,3 +52,19 @@ Opening corrections reject posted entries inside the new opening period. Correct
 - [Review migrations and verify recovery](docs/conventions/database-schema.md)
 - [Document and verify working user workflows](docs/conventions/feature-map.md)
 - [Protect private data and bound agent work](docs/conventions/agent-safety.md)
+
+## Record manual activity
+
+```sh
+npm run inab -- --db /absolute/private/path/plan.sqlite transaction add --account ACCOUNT_ID --date 2026-10-17 --amount -60.00 --payee "Synthetic shop" --confirm --json
+npm run inab -- --db /absolute/private/path/plan.sqlite register ACCOUNT_ID --json
+npm run inab -- --db /absolute/private/path/plan.sqlite transaction edit TRANSACTION_ID --date 2026-10-17 --amount -55.00 --payee "Synthetic shop" --memo "Correction" --expected-version 1 --confirm --json
+npm run inab -- --db /absolute/private/path/plan.sqlite transaction clear TRANSACTION_ID --posted-on 2026-10-17 --expected-version 2 --confirm --json
+npm run inab -- --db /absolute/private/path/plan.sqlite transaction unclear TRANSACTION_ID --expected-version 3 --confirm --json
+```
+
+Use returned transaction IDs and revisions. Identical purchases remain separate. Add accepts optional `--memo` and `--posted-on`. Edit requires `--memo`; use `--memo ''` to clear it. Edit keeps the posting state. Use clear or unclear to change it. Each transaction write also advances the account revision.
+
+An old pending purchase can occur before opening. Its posting date must be after opening and on or after occurrence. Future activity is refused because scheduled entries are deferred. Tracking registers and transaction writes are not supported in Slice 1. Register output shows signed working, cleared, and uncleared amounts. It reads account values and entries from one database snapshot.
+
+Until the reconciliation correction workflow is added, posting or amount changes to cleared activity stop if reconciliation evidence exists. Payee and memo corrections remain available and preserve that evidence. Failed writes report the operation ID; inspect the result before retrying.

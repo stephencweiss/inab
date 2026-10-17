@@ -40,6 +40,7 @@ function parseStep(value: unknown) {
     promptAnswers: parseStrings(value.promptAnswers),
     exitStatus: value.exitStatus,
     captureAccount: value.captureAccount,
+    captureTransaction: value.captureTransaction === true,
     stdoutContains: parseStrings(value.stdoutContains),
     stderrContains: parseStrings(value.stderrContains),
   };
@@ -95,6 +96,17 @@ function parseCapturedAccount(output: string) {
     throw new Error("Cannot capture account ID/revision");
   return { id: parsed.account.id, revision: parsed.account.revision };
 }
+function parseCapturedTransaction(output: string) {
+  const parsed: unknown = JSON.parse(output);
+  if (
+    !isRecord(parsed) ||
+    !isRecord(parsed.transaction) ||
+    typeof parsed.transaction.id !== "string" ||
+    typeof parsed.transaction.revision !== "number"
+  )
+    throw new Error("Cannot capture transaction ID/revision");
+  return { id: parsed.transaction.id, revision: parsed.transaction.revision };
+}
 it("validates the hand-authored account map and executes its exact terminal commands", () => {
   const workflows = parseMap(
     JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.json"), "utf8")),
@@ -103,11 +115,14 @@ it("validates the hand-authored account map and executes its exact terminal comm
     const fixture = temporaryDatabase();
     const variables = new Map([["database", fixture.path]]);
     const substitute = (text: string) =>
-      text.replace(/\$\{(database|accountId|revision)\}/g, (_, key: string) => {
-        const value = variables.get(key);
-        if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
-        return value;
-      });
+      text.replace(
+        /\$\{(database|accountId|revision|transactionId|transactionRevision)\}/g,
+        (_, key: string) => {
+          const value = variables.get(key);
+          if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
+          return value;
+        },
+      );
     try {
       expect(workflow.prerequisites.length).toBeGreaterThan(0);
       for (const step of workflow.steps) {
@@ -118,6 +133,11 @@ it("validates the hand-authored account map and executes its exact terminal comm
           expect(result.stdout).toContain(substitute(signal));
         for (const signal of step.stderrContains)
           expect(result.stderr).toContain(substitute(signal));
+        if (step.captureTransaction) {
+          const captured = parseCapturedTransaction(result.stdout);
+          variables.set("transactionId", captured.id);
+          variables.set("transactionRevision", String(captured.revision));
+        }
         if (step.captureAccount) {
           const captured = parseCapturedAccount(result.stdout);
           variables.set("accountId", captured.id);

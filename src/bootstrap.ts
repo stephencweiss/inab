@@ -1,3 +1,5 @@
+import { createTransactions } from "./application/transactions.js";
+import { createTransactionStore } from "./storage/transactions.js";
 import { randomUUID } from "node:crypto";
 import { createAccounts } from "./application/accounts.js";
 import { createAccountStore } from "./storage/accounts.js";
@@ -9,6 +11,14 @@ export function localToday() {
 }
 export function accountApplication(path: string) {
   return createAccounts(createAccountStore(path), {
+    id: randomUUID,
+    now: () => new Date().toISOString(),
+    today: localToday,
+  });
+}
+
+export function transactionApplication(path: string) {
+  return createTransactions(createTransactionStore(path), {
     id: randomUUID,
     now: () => new Date().toISOString(),
     today: localToday,

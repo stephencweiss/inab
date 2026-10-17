@@ -1,3 +1,4 @@
+import { executeTransaction } from "./transactions.js";
 import { resolve } from "node:path";
 import { accountApplication, initializeDatabase, localToday } from "../bootstrap.js";
 import type { AccountFailure, AccountResult } from "../application/ports.js";
@@ -21,6 +22,11 @@ Available:
   init --confirm
   account add --name NAME --kind cash|credit --opening SIGNED_USD --as-of YYYY-MM-DD --confirm
   account add --name NAME --kind tracking --confirm
+  transaction add --account ID --date DATE --amount SIGNED_USD --payee TEXT [--memo TEXT] [--posted-on DATE] --confirm
+  transaction edit ID --date DATE --amount SIGNED_USD --payee TEXT --memo TEXT --expected-version N --confirm
+  transaction clear ID --posted-on DATE --expected-version N --confirm
+  transaction unclear ID --expected-version N --confirm
+  register ID
   account list
   account show ID
   account rename ID --name NAME --expected-version N --confirm
@@ -32,8 +38,6 @@ In a terminal, the opening date prompt shows today's local date. Scripts require
 Writes show a preview. Enter cancel to stop a prompt. Scripts require --confirm.
 
 These manual-account commands are planned and not available yet:
-  transaction add|edit|clear|unclear
-  register ID
   reconcile ID
   reconciliation list
   snapshot add|correct|list
@@ -89,6 +93,10 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     if (!command.json) process.stderr.write(`Init target: ${command.database}\n`);
     const result = await initializeDatabase(command.database);
     output(command.json, result, `Initialized database: ${result.database}`);
+    return;
+  }
+  if (command.action.startsWith("transaction-") || command.action === "register") {
+    await executeTransaction(command, prompts);
     return;
   }
   const app = accountApplication(command.database);

@@ -1,8 +1,9 @@
+import { orderRegisterEntries } from "../accounts/register.js";
 import { eq } from "drizzle-orm";
 import type { AccountPreview, AccountSession, AccountStore } from "../application/ports.js";
 import { openDatabase } from "./database.js";
 import { migrationsFolder, validateMigrationHistory } from "./migration-history.js";
-import { parseAccountRow, parseTransactionRow } from "./rows.js";
+import { parseAccountRow, parseManualTransactionRow } from "./rows.js";
 import { accounts } from "./schema/accounts.js";
 import { changes } from "./schema/changes.js";
 import { reconciliations } from "./schema/reconciliations.js";
@@ -17,12 +18,14 @@ function sessionFor(db: Queries): AccountSession {
       return row ? parseAccountRow(row) : null;
     },
     entries: (id) =>
-      db
-        .select()
-        .from(transactions)
-        .where(eq(transactions.accountId, id))
-        .all()
-        .map(parseTransactionRow),
+      orderRegisterEntries(
+        db
+          .select()
+          .from(transactions)
+          .where(eq(transactions.accountId, id))
+          .all()
+          .map(parseManualTransactionRow),
+      ),
     hasReconciliations: (id) =>
       db
         .select({ id: reconciliations.id })

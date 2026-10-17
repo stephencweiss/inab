@@ -1,6 +1,31 @@
+function parseTransactionAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
+  const action = words[1];
+  if (action === "add" && words.length === 2) return { action: "transaction-add", id: null };
+  if (words.length <= 3) {
+    if (action === "edit") return { action: "transaction-edit", id: words[2] ?? null };
+    if (action === "clear") return { action: "transaction-clear", id: words[2] ?? null };
+    if (action === "unclear") return { action: "transaction-unclear", id: words[2] ?? null };
+  }
+  throw new Error("Invalid transaction arguments");
+}
 export type TerminalCommand = {
   database: string;
-  action: "init" | "add" | "list" | "show" | "rename" | "opening";
+  action:
+    | "init"
+    | "add"
+    | "list"
+    | "show"
+    | "rename"
+    | "opening"
+    | "transaction-add"
+    | "transaction-edit"
+    | "transaction-clear"
+    | "transaction-unclear"
+    | "register";
+  accountId: string | null;
+  payee: string | null;
+  memo: string | null;
+  postedOn: string | null;
   id: string | null;
   json: boolean;
   confirm: boolean;
@@ -13,6 +38,11 @@ export type TerminalCommand = {
 };
 const valueFlags = new Set([
   "--db",
+  "--account",
+  "--date",
+  "--payee",
+  "--memo",
+  "--posted-on",
   "--name",
   "--kind",
   "--currency",
@@ -22,6 +52,30 @@ const valueFlags = new Set([
   "--expected-version",
 ]);
 const flagsFor = {
+  "transaction-add": [
+    "--db",
+    "--account",
+    "--date",
+    "--amount",
+    "--payee",
+    "--memo",
+    "--posted-on",
+    "--confirm",
+    "--json",
+  ],
+  "transaction-edit": [
+    "--db",
+    "--date",
+    "--amount",
+    "--payee",
+    "--memo",
+    "--expected-version",
+    "--confirm",
+    "--json",
+  ],
+  "transaction-clear": ["--db", "--posted-on", "--expected-version", "--confirm", "--json"],
+  "transaction-unclear": ["--db", "--expected-version", "--confirm", "--json"],
+  register: ["--db", "--json"],
   init: ["--db", "--confirm", "--json"],
   add: ["--db", "--name", "--kind", "--currency", "--opening", "--as-of", "--confirm", "--json"],
   list: ["--db", "--json"],
@@ -51,6 +105,9 @@ function parseTokens(args: string[]) {
 }
 function parseAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
   if (words[0] === "init" && words.length === 1) return { action: "init" as const, id: null };
+  if (words[0] === "register" && words.length <= 2)
+    return { action: "register", id: words[1] ?? null };
+  if (words[0] === "transaction") return parseTransactionAction(words);
   if (words[0] !== "account")
     throw new Error("Invalid or unavailable command. Use --help for command status.");
   const action = words[1];
@@ -72,8 +129,33 @@ export function parseArguments(args: string[]): TerminalCommand {
     if (!allowed.includes(flag)) throw new Error(`Flag not valid for ${parsed.action}: ${flag}`);
   const database = flags.get("--db");
   if (!database?.trim()) throw new Error("An explicit --db path is required");
-  const rawRevision = flags.get("--expected-version");
-  const expectedVersion = rawRevision === undefined ? null : Number(rawRevision);
+  const expectedVersion = parseRevision(flags.get("--expected-version") ?? null);
+  return {
+    database,
+    accountId: flags.get("--account") ?? null,
+    payee: flags.get("--payee") ?? null,
+    memo: flags.get("--memo") ?? null,
+    postedOn: flags.get("--posted-on") ?? null,
+    ...parsed,
+    json: flags.has("--json"),
+    confirm: flags.has("--confirm"),
+    name: flags.get("--name") ?? null,
+    kind: flags.get("--kind") ?? null,
+    currency: flags.get("--currency") ?? "USD",
+    opening:
+      flags.get(
+        parsed.action === "opening" || parsed.action.startsWith("transaction-")
+          ? "--amount"
+          : "--opening",
+      ) ?? null,
+    date: flags.get(parsed.action.startsWith("transaction-") ? "--date" : "--as-of") ?? null,
+    expectedVersion,
+  };
+}
+
+function parseRevision(raw: string | null) {
+  const rawRevision = raw;
+  const expectedVersion = rawRevision === null ? null : Number(rawRevision);
   if (
     expectedVersion !== null &&
     (!/^\d+$/.test(rawRevision ?? "") ||
@@ -81,16 +163,5 @@ export function parseArguments(args: string[]): TerminalCommand {
       expectedVersion < 1)
   )
     throw new Error("Invalid expected version");
-  return {
-    database,
-    ...parsed,
-    json: flags.has("--json"),
-    confirm: flags.has("--confirm"),
-    name: flags.get("--name") ?? null,
-    kind: flags.get("--kind") ?? null,
-    currency: flags.get("--currency") ?? "USD",
-    opening: flags.get(parsed.action === "opening" ? "--amount" : "--opening") ?? null,
-    date: flags.get("--as-of") ?? null,
-    expectedVersion,
-  };
+  return expectedVersion;
 }

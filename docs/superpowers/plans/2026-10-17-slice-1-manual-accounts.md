@@ -14,7 +14,7 @@
 
 Read the [design](../specs/2026-10-17-inab-design.md), [manual-account decision](../../decisions/2026-10-17-manual-account-defaults.md), [conventions](../../../README.md), and [verification guide](../../verification.md). Those documents own product decisions. This plan supplies implementation choices and test cases; choices marked proposed are recommendations for this slice, not prior user decisions.
 
-The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Transaction, reconciliation, snapshot, and user recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
+The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Reconciliation, snapshot, and user recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
 
 All paths below are relative to `/Users/sweiss/code/inab`. Use the current checkout unless execution needs isolation. Never read real YNAB exports for these tests. Use generated synthetic records and temporary database directories. Do not commit or publish private data. No remote creation, push, paid service, or deployment is part of this plan.
 
@@ -214,12 +214,12 @@ it("keeps pending purchases outside the cleared balance", () => {
 **Create:** `src/application/transactions.ts`, `src/storage/transactions.ts`, `tests/integration/transactions.test.ts`, `tests/cli/transactions.test.ts`.
 **Modify:** CLI parser/rendering, application ports, feature map.
 
-- [ ] Test the $1,000 example through real CLI subprocesses: add a $60 uncleared outflow and a $25 cleared outflow, restart, and verify working $915 / cleared $975 / uncleared -$60. Two identical purchases get two IDs.
-- [ ] Test a purchase occurring before opening but posting after it; clearing on/before opening fails. Future entries fail with a scheduling explanation. Tracking transaction writes fail with an explanation that they are not supported in Slice 1. Run `npm test -- tests/integration/transactions.test.ts tests/cli/transactions.test.ts`; expect red.
-- [ ] Implement add/edit/register and clear/unclear commands with exact input parsing. Edit changes amount/date/payee/memo, retaining posting state; clearing changes the posting date through its own command. Validate posting date is not before occurrence. No SQL in handlers.
-- [ ] Add tests for amount correction, clearing and unclearing, stale expected version, and forced audit-write failure. Implement the mutation and account revision update in one transaction; no partial register change on failure.
-- [ ] Test safe integer overflow in totals before commit. Reject it and leave data unchanged. Ensure register ordering is stable by occurrence date, created time, then ID.
-- [ ] Run focused checks and the feature map. Commit: `feat: record and clear manual transactions`.
+- [x] Test the $1,000 example through real CLI subprocesses: add a $60 uncleared outflow and a $25 cleared outflow, restart, and verify working $915 / cleared $975 / uncleared -$60. Two identical purchases get two IDs.
+- [x] Test a purchase occurring before opening but posting after it; clearing on/before opening fails. Future entries fail with a scheduling explanation. Tracking transaction writes fail with an explanation that they are not supported in Slice 1. Run `npm test -- tests/integration/transactions.test.ts tests/cli/transactions.test.ts`; expect red.
+- [x] Implement add/edit/register and clear/unclear commands with exact input parsing. Edit changes amount/date/payee/memo, retaining posting state; clearing changes the posting date through its own command. Validate posting date is not before occurrence. No SQL in handlers.
+- [x] Add tests for amount correction, clearing and unclearing, stale expected version, and forced audit-write failure. Implement the mutation and account revision update in one transaction; no partial register change on failure.
+- [x] Test safe integer overflow in totals before commit. Reject it and leave data unchanged. Ensure register ordering is stable by occurrence date, created time, then ID.
+- [x] Run final checks and reviews. Commit: `feat: record and clear manual transactions`.
 
 ### Task 8 — Reconcile an account balance
 
