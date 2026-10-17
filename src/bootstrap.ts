@@ -1,1 +1,16 @@
+import { randomUUID } from "node:crypto";
+import { createAccounts } from "./application/accounts.js";
+import { createAccountStore } from "./storage/accounts.js";
 export { initializeDatabase, upgradeDatabase } from "./storage/database.js";
+
+export function localToday() {
+  const now = new Date();
+  return `${String(now.getFullYear()).padStart(4, "0")}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+export function accountApplication(path: string) {
+  return createAccounts(createAccountStore(path), {
+    id: randomUUID,
+    now: () => new Date().toISOString(),
+    today: localToday,
+  });
+}

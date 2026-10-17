@@ -31,7 +31,7 @@ Keep running costs and maintenance low. Each build slice must produce a working 
 
 ## Starting evidence
 
-The project folder has exports, documentation, and a Git repository. The remote is `https://github.com/stephencweiss/inab.git`. Application implementation has not started.
+The project folder has exports, documentation, and a Git repository. The remote is `https://github.com/stephencweiss/inab.git`. At the start of this design, application implementation had not started. The terminal now supports private storage initialization and manual account create/list/show/rename/opening operations. Transaction and reconciliation workflows remain planned.
 
 Read-only inspection found:
 

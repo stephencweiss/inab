@@ -14,7 +14,7 @@
 
 Read the [design](../specs/2026-10-17-inab-design.md), [manual-account decision](../../decisions/2026-10-17-manual-account-defaults.md), [conventions](../../../README.md), and [verification guide](../../verification.md). Those documents own product decisions. This plan supplies implementation choices and test cases; choices marked proposed are recommendations for this slice, not prior user decisions.
 
-The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, the terminal application, and the feature map are not installed. Do not initialize another repository, push, or copy SuChef application dependencies.
+The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Transaction, reconciliation, snapshot, and user recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
 
 All paths below are relative to `/Users/sweiss/code/inab`. Use the current checkout unless execution needs isolation. Never read real YNAB exports for these tests. Use generated synthetic records and temporary database directories. Do not commit or publish private data. No remote creation, push, paid service, or deployment is part of this plan.
 
@@ -202,12 +202,12 @@ it("keeps pending purchases outside the cleared balance", () => {
 **Create:** `src/application/ports.ts`, `accounts.ts`; `src/storage/accounts.ts`; `src/bootstrap.ts`; `src/cli/parse.ts`, `prompts.ts`, `render.ts`; `tests/integration/accounts.test.ts`, `tests/cli/accounts.test.ts`.
 **Create when first workflow works:** `docs/agent/feature_map.json`, `tests/policy/feature-map.test.ts`.
 
-- [ ] Write CLI and integration tests for Cash/Credit opening balance creation and Tracking creation without an opening pair. Reject blank names, non-USD currency, and malformed dates. Duplicate names require explicit selection by ID; never merge accounts by name.
-- [ ] Run `npm test -- tests/integration/accounts.test.ts tests/cli/accounts.test.ts`; expect failure. Implement account add/list/show through the application and storage boundaries, returning generated ID and revision.
-- [ ] Add a rename test proving ID stability. Add opening correction tests: preview old/new balance and date, require confirmation and expected version, and roll back account/history writes together on failure. Refuse corrections that would place an existing posted transaction inside the new opening period.
-- [ ] Implement audit records and optimistic version checking. Show target database path in write previews. A cancelled prompt performs no write. JSON results include complete values; absent values use null.
-- [ ] Hand-write the first feature-map entry with synthetic setup and exact terminal steps. Add schema, file-reference, and command execution checks; derive neither the map nor its success criteria from implementation output.
-- [ ] Run focused tests, feature-map test, lint, typecheck, and restart inspection. Commit: `feat: manage local accounts from the terminal`.
+- [x] Write CLI and integration tests for Cash/Credit opening balance creation and Tracking creation without an opening pair. Reject blank names, non-USD currency, and malformed dates. Duplicate names require explicit selection by ID; never merge accounts by name.
+- [x] Run `npm test -- tests/integration/accounts.test.ts tests/cli/accounts.test.ts`; expect failure. Implement account add/list/show through the application and storage boundaries, returning generated ID and revision.
+- [x] Add a rename test proving ID stability. Add opening correction tests: preview old/new balance and date, require confirmation and expected version, and roll back account/history writes together on failure. Refuse corrections that would place an existing posted transaction inside the new opening period.
+- [x] Implement audit records and optimistic version checking. Show target database path in write previews. A cancelled prompt performs no write. JSON results include complete values; absent values use null.
+- [x] Hand-write the first feature-map entry with synthetic setup and exact terminal steps. Add schema, file-reference, and command execution checks; derive neither the map nor its success criteria from implementation output.
+- [x] Run focused tests, feature-map test, lint, typecheck, and restart inspection. Commit: `feat: manage local accounts from the terminal`.
 
 ### Task 7 — Enter, edit, and clear manual transactions
 

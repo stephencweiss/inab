@@ -17,6 +17,7 @@ export type TrackingAccount = AccountIdentity & {
 };
 
 export type Account = RegisterAccount | TrackingAccount;
+export type NewAccount = Omit<RegisterAccount, "id"> | Omit<TrackingAccount, "id">;
 
 export type RegisterEntry = {
   readonly id: string;

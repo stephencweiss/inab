@@ -108,3 +108,26 @@ Scope: safe SQLite initialization, the first generated Drizzle schema and custom
 Independent specification and code quality reviews approved the revised implementation with no remaining material findings.
 
 Task 5 is complete. The task commit is `feat: initialize private SQLite storage`. Task 6 remains open. The four accepted development-dependency audit findings remain unchanged.
+
+
+## October 17, 2026 — Task 6
+
+Scope: local account create/list/show/rename/opening commands, application-owned ports, atomic account/history storage, and the first hand-edited account workflow map. No migration or Task 7 transaction command is added.
+
+- Red: `npm test -- tests/integration/accounts.test.ts tests/cli/accounts.test.ts` failed because account operations were absent and account commands returned exit 2. The first green run passed nine tests.
+- Added creation contracts without placeholder identity, generated permanent account and operation IDs, injected IDs/clocks, USD validation, and signed cents. Tracking has null opening values and shows "no balance recorded". Duplicate names remain separate IDs. Local date defaults are shown in terminal prompts; scripts require explicit dates.
+- Writes preview database target, ID/revision, and complete old/new values. Edits require the expected revision. Storage rechecks revision and operation constraints inside an immediate transaction. Account and complete before/after history changes roll back together on an injected history failure. Storage errors report the attempted operation ID; no retry occurs.
+- Opening corrections reject posted entries on or before the new boundary and recheck after preview. Corrections stop when reconciliation evidence exists until its review workflow is implemented in Task 9. Account class and currency remain immutable. Mutated-preview regression tests failed before commit-time validation was added.
+- Account and transaction reads validate raw values before display. Normal account operations require the latest migration ledger. Timestamp regressions rejected date-only/local forms after a failing test showed `Date.parse` accepted them; row timestamps now require canonical UTC ISO with seconds or milliseconds.
+- The hand-edited map records exact synthetic terminal commands and expected success/failure signals. Its test executes those commands against a new temporary database, captures generated ID/revision, and rejects bad structure, duplicate workflow IDs, and broken source references. The map is not generated from command output.
+- Additional red/green checks covered exact planned `--as-of` and correction `--amount` flags, storage failure operation IDs, and human working/cleared/uncleared display. Focused checks include prompt input, date default, explicit dates, confirmation, stale revisions, missing IDs, raw row corruption, and rollback.
+- Lead-agent real-terminal checks used only a temporary synthetic database. Typing `cancel`, answering `no` at confirmation, and Ctrl+C during input returned 0 with canceled output and left no account. A full cash creation showed the local date default, signed amount, database target, and ID/revision before confirmation. A canceled rename showed the same ID and revision 1 to 2 preview but preserved the original account at revision 1. A fresh process showed working/cleared 100000 cents and uncleared 0; the audit table held exactly one successful write after all cancellation cases. The temporary directory was removed.
+
+- A late correction regression failed when a safe opening amount caused an unsafe total with an existing one-cent entry. The correction now checks the pure balance rules at preview and inside the immediate write transaction, including entries added after preview; rejection preserves account and history.
+- Combined account inspection reads metadata and entries and computes totals within one storage snapshot. Its regression commits a correction immediately after the read: the returned old revision, opening, and totals agree, while a fresh inspection returns the new revision, opening, and totals.
+- The feature-map validator rejects literal database targets before execution and permits only the temporary `${database}` target for database steps. Its invalid-target regression failed before this guard.
+- Verification: the focused account, prompt, and feature-map command passed 23 tests; lint and typecheck passed. `npm run check` passed all document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 22 test files and 222 tests, including the isolated built-init regression. The strengthened snapshot race regression also passed afterward. TypeScript runners required broader local execution access for temporary IPC sockets. No external service or household data was used.
+
+Independent specification and code quality reviews approved Task 6 with no remaining material findings. The lead agent ran the final full check: 22 test files and 222 tests passed, with all checks and the build passing.
+
+Task 6 is complete. The task commit is `feat: manage local accounts from the terminal`. Task 7 remains open. The four accepted development-dependency audit findings remain unchanged.

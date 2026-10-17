@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "workflows": [
+    {
+      "id": "terminal.accounts.manage",
+      "name": "Create, inspect, rename, and correct a local account",
+      "prerequisites": [
+        "Use a new temporary directory and an absent database path inside it. All names and amounts below are synthetic.",
+        "Run each command from the repository root with Node.js 24.16.0 and installed dependencies. The test uses the same entry point from the temporary directory.",
+        "Replace ${database} with the temporary database path. Capture ${accountId} and ${revision} from the account object in the JSON output when captureAccount is true.",
+        "Commands use explicit flags and require no prompt answers. Delete the temporary directory after the workflow."
+      ],
+      "sourceFiles": [
+        "src/cli/main.ts",
+        "src/cli/parse.ts",
+        "src/cli/prompts.ts",
+        "src/cli/render.ts",
+        "src/bootstrap.ts",
+        "src/application/accounts.ts",
+        "src/application/ports.ts",
+        "src/storage/accounts.ts",
+        "src/storage/rows.ts"
+      ],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "add",
+            "--name",
+            "Synthetic cash",
+            "--kind",
+            "cash",
+            "--opening",
+            "123.45",
+            "--as-of",
+            "2026-10-16",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "stdoutContains": ["\"openingCents\":12345", "\"revision\":1"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "list", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["${accountId}", "Synthetic cash"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "show", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["${accountId}", "\"workingCents\":12345"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "rename",
+            "${accountId}",
+            "--name",
+            "Synthetic renamed",
+            "--expected-version",
+            "${revision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "stdoutContains": ["${accountId}", "Synthetic renamed", "\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "opening",
+            "${accountId}",
+            "--amount",
+            "-12.34",
+            "--as-of",
+            "2026-10-15",
+            "--expected-version",
+            "1",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["stale-version"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "opening",
+            "${accountId}",
+            "--amount",
+            "-12.34",
+            "--as-of",
+            "2026-10-15",
+            "--expected-version",
+            "${revision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "stdoutContains": [
+            "${accountId}",
+            "\"openingCents\":-1234",
+            "\"openingDate\":\"2026-10-15\"",
+            "\"revision\":3"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "show", "missing-synthetic-id", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 3,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["account-unavailable"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "add",
+            "--name",
+            "Invalid synthetic",
+            "--kind",
+            "cash",
+            "--opening",
+            "0",
+            "--as-of",
+            "2026-02-30",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 2,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["invalid-account"]
+        }
+      ]
+    }
+  ]
+}
