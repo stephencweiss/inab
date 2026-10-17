@@ -31,7 +31,7 @@ Keep running costs and maintenance low. Each build slice must produce a working 
 
 ## Starting evidence
 
-The project folder has exports, documentation, and a Git repository. The remote is `https://github.com/stephencweiss/inab.git`. At the start of this design, application implementation had not started. The terminal now supports private storage initialization and manual account create/list/show/rename/opening operations. Manual transaction entry, correction, clearing, and registers are implemented. Reconciliation, Tracking snapshots, and user backup/restore workflows remain planned.
+The project folder has exports, documentation, and a Git repository. The remote is `https://github.com/stephencweiss/inab.git`. At the start of this design, application implementation had not started. The terminal now supports private storage initialization and manual account create/list/show/rename/opening operations. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit bank reconciliation, original evidence lists, and derived register coverage are implemented. Correction review, Tracking snapshots, and user backup/restore workflows remain planned.
 
 Read-only inspection found:
 
@@ -254,7 +254,7 @@ Resolve later: recurring entries and targets, local model hardware, per-person w
 
 ## Next step
 
-Review the [Slice 1 implementation plan](../plans/2026-10-17-slice-1-manual-accounts.md), which defines tasks and checks for manual accounts, balances, reconciliation, and recovery. Use that working local account model as the foundation for Slice 2 imports and Slice 4 Plaid links. No application implementation has started.
+Review the [Slice 1 implementation plan](../plans/2026-10-17-slice-1-manual-accounts.md), which defines tasks and checks for manual accounts, balances, reconciliation, and recovery. Use that working local account model as the foundation for Slice 2 imports and Slice 4 Plaid links. Local account management, manual transactions, registers, and Cash/Credit bank reconciliation are implemented. Reconciliation stores original evidence and derives current coverage from balance-relevant values. Correction review, Tracking snapshots, and user backup/restore commands remain planned.
 
 ## References
 

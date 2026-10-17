@@ -1,3 +1,4 @@
+import { executeReconciliation } from "./reconciliation.js";
 import { executeTransaction } from "./transactions.js";
 import { resolve } from "node:path";
 import { accountApplication, initializeDatabase, localToday } from "../bootstrap.js";
@@ -27,6 +28,8 @@ Available:
   transaction clear ID --posted-on DATE --expected-version N --confirm
   transaction unclear ID --expected-version N --confirm
   register ID
+  reconcile ID --as-of DATE --bank-balance SIGNED_USD [--confirm]
+  reconciliation list --account ID
   account list
   account show ID
   account rename ID --name NAME --expected-version N --confirm
@@ -38,8 +41,6 @@ In a terminal, the opening date prompt shows today's local date. Scripts require
 Writes show a preview. Enter cancel to stop a prompt. Scripts require --confirm.
 
 These manual-account commands are planned and not available yet:
-  reconcile ID
-  reconciliation list
   snapshot add|correct|list
   backup --to NEW_PATH
   restore --from BACKUP_PATH --to NEW_PATH
@@ -93,6 +94,10 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     if (!command.json) process.stderr.write(`Init target: ${command.database}\n`);
     const result = await initializeDatabase(command.database);
     output(command.json, result, `Initialized database: ${result.database}`);
+    return;
+  }
+  if (command.action === "reconcile" || command.action === "reconciliation-list") {
+    await executeReconciliation(command, prompts);
     return;
   }
   if (command.action.startsWith("transaction-") || command.action === "register") {

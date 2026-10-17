@@ -20,7 +20,7 @@ export function parseMigrationRow(value: unknown) {
   return { hash: value.hash, createdAt: parseInteger(value.created_at) };
 }
 
-function parseTimestamp(value: unknown) {
+export function parseTimestamp(value: unknown) {
   if (
     typeof value !== "string" ||
     !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)

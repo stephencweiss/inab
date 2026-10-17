@@ -21,7 +21,9 @@ export type TerminalCommand = {
     | "transaction-edit"
     | "transaction-clear"
     | "transaction-unclear"
-    | "register";
+    | "register"
+    | "reconcile"
+    | "reconciliation-list";
   accountId: string | null;
   payee: string | null;
   memo: string | null;
@@ -38,6 +40,7 @@ export type TerminalCommand = {
 };
 const valueFlags = new Set([
   "--db",
+  "--bank-balance",
   "--account",
   "--date",
   "--payee",
@@ -52,6 +55,8 @@ const valueFlags = new Set([
   "--expected-version",
 ]);
 const flagsFor = {
+  reconcile: ["--db", "--as-of", "--bank-balance", "--confirm", "--json"],
+  "reconciliation-list": ["--db", "--account", "--json"],
   "transaction-add": [
     "--db",
     "--account",
@@ -107,7 +112,14 @@ function parseAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
   if (words[0] === "init" && words.length === 1) return { action: "init" as const, id: null };
   if (words[0] === "register" && words.length <= 2)
     return { action: "register", id: words[1] ?? null };
+  if (words[0] === "reconcile" && words.length <= 2)
+    return { action: "reconcile", id: words[1] ?? null };
+  if (words[0] === "reconciliation" && words[1] === "list" && words.length === 2)
+    return { action: "reconciliation-list", id: null };
   if (words[0] === "transaction") return parseTransactionAction(words);
+  return parseAccountAction(words);
+}
+function parseAccountAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
   if (words[0] !== "account")
     throw new Error("Invalid or unavailable command. Use --help for command status.");
   const action = words[1];
@@ -130,6 +142,10 @@ export function parseArguments(args: string[]): TerminalCommand {
   const database = flags.get("--db");
   if (!database?.trim()) throw new Error("An explicit --db path is required");
   const expectedVersion = parseRevision(flags.get("--expected-version") ?? null);
+  let amountFlag = "--opening";
+  if (parsed.action === "opening" || parsed.action.startsWith("transaction-"))
+    amountFlag = "--amount";
+  if (parsed.action === "reconcile") amountFlag = "--bank-balance";
   return {
     database,
     accountId: flags.get("--account") ?? null,
@@ -142,12 +158,7 @@ export function parseArguments(args: string[]): TerminalCommand {
     name: flags.get("--name") ?? null,
     kind: flags.get("--kind") ?? null,
     currency: flags.get("--currency") ?? "USD",
-    opening:
-      flags.get(
-        parsed.action === "opening" || parsed.action.startsWith("transaction-")
-          ? "--amount"
-          : "--opening",
-      ) ?? null,
+    opening: flags.get(amountFlag) ?? null,
     date: flags.get(parsed.action.startsWith("transaction-") ? "--date" : "--as-of") ?? null,
     expectedVersion,
   };

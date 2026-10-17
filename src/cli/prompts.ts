@@ -59,6 +59,8 @@ export async function completeCommand(
   today: string,
 ): Promise<TerminalCommand> {
   const value = { ...command };
+  if (value.action === "reconciliation-list" || value.action === "reconcile")
+    return completeReconciliation(value, prompts, today);
   if (value.action.startsWith("transaction-") || value.action === "register")
     return completeTransaction(value, prompts, today);
   if (["show", "rename", "opening"].includes(value.action))
@@ -78,6 +80,30 @@ export async function completeCommand(
       throw new InvalidInput("Tracking accounts have no opening pair");
   } else if (value.action === "add" || value.action === "opening") {
     await completeOpening(value, prompts, today);
+  }
+  return value;
+}
+async function completeReconciliation(
+  value: TerminalCommand,
+  prompts: TerminalPrompts,
+  today: string,
+) {
+  if (value.action === "reconciliation-list") {
+    value.accountId = await required(value.accountId, "Account ID (or cancel): ", prompts);
+    return value;
+  }
+  if (value.action === "reconcile") {
+    value.id = await required(value.id, "Account ID (or cancel): ", prompts);
+    value.opening = await required(
+      value.opening,
+      "Bank posted closing balance; credit debt negative (or cancel): ",
+      prompts,
+    );
+    if (value.date === null) {
+      if (!prompts.interactive) throw new InvalidInput("Scripts require --as-of YYYY-MM-DD");
+      value.date = (await prompts.ask(`Reconciliation cutoff [${today}] (or cancel): `)) || today;
+    }
+    return value;
   }
   return value;
 }

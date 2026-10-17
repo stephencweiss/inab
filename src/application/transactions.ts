@@ -1,3 +1,4 @@
+import { evidenceMatches } from "../accounts/reconciliation.js";
 import { orderRegisterEntries } from "../accounts/register.js";
 import { balances, validateRegisterEntry } from "../accounts/balances.js";
 import type { AccountBalances } from "../accounts/balances.js";
@@ -231,7 +232,7 @@ export function createTransactions(store: TransactionStore, runtime: AccountRunt
   }
   function register(id: string): TransactionResult<{
     account: StoredAccount;
-    entries: ManualTransaction[];
+    entries: (ManualTransaction & { clearance: "uncleared" | "cleared" | "reconciled" })[];
     balances: AccountBalances;
   }> {
     return store.read((session) => {
@@ -249,7 +250,20 @@ export function createTransactions(store: TransactionStore, runtime: AccountRunt
           ok: false,
           reason: result.reason === "unsafe-cents" ? "unsafe-cents" : "invalid-transaction",
         };
-      return { ok: true, value: { account, entries, balances: result.value } };
+      const valid = session
+        .reconciliations(id)
+        .filter((record) => record.status === "valid" && evidenceMatches(record, account, entries));
+      const coveredIds = new Set(
+        valid.flatMap((record) => record.entries.map((evidence) => evidence.transactionId)),
+      );
+      const displayed = entries.map((entry) => {
+        if (entry.postedOn === null) return { ...entry, clearance: "uncleared" as const };
+        return {
+          ...entry,
+          clearance: coveredIds.has(entry.id) ? ("reconciled" as const) : ("cleared" as const),
+        };
+      });
+      return { ok: true, value: { account, entries: displayed, balances: result.value } };
     });
   }
   return { previewAdd, previewEdit, previewClear, previewUnclear, commit, register };

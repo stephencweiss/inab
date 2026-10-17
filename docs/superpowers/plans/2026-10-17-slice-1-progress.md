@@ -149,3 +149,25 @@ Scope: manual Cash/Credit transaction add, edit, clear, unclear, and register co
 - Independent specification and code quality reviews approved Task 7 with no material findings. The specification reviewer also verified Ctrl+C at transaction confirmation in a real terminal: exit 0 and an empty register.
 
 Task 7 is complete. The task commit is `feat: record and clear manual transactions`. Task 8 remains open. The four accepted dependency audit findings remain unchanged.
+
+
+## October 17, 2026 — Task 8 implementation
+
+Scope: Cash/Credit bank reconciliation, original balance evidence, full evidence lists, and derived register coverage. The temporary protection for reconciled amounts/posting dates/opening balances stays in place. Correction invalidation remains Task 9.
+
+- Red: `npm test -- tests/unit/reconciliation.test.ts tests/integration/reconciliation.test.ts tests/cli/reconciliation.test.ts` failed because the domain/application modules were absent and the CLI rejected `--bank-balance`. The first green run passed seven tests.
+- The synthetic opening 100000 / pending -6000 / posted -2500 example computes cleared 97500. Bank 97000 reports difference -500 with exit 4 and no write. Bank 97500 confirms the cutoff, opening pair, account revision, and original entry ID/revision/amount/posting date. Pending activity stays uncleared. Signed credit balances and empty registers work.
+- Confirmation rechecks the account revision and complete snapshot inside an immediate transaction. Reconciliation, evidence, and audit insertions roll back together on evidence or audit failure. Repeating the same valid account revision/cutoff returns the original record with `reused: true`, null operation ID, and no duplicate evidence or audit. A reused record is checked against current values and bank balance first.
+- The documented comparison helper checks the opening pair, account membership, complete covered set, amounts, and posting dates. Metadata-only changes preserve coverage while the stored evidence keeps its original revision and values. Pending and later-posted entries do not remove earlier coverage. A changed current value makes the list show `needs-review` and the register show `cleared`; no Task 9 mutation workflow is added.
+- Additional red/green tests rejected date-only preview timestamps and invalid account revisions before their validation fixes. Stored timestamps use the existing canonical UTC parser. Tests also cover invalid/early/future cutoffs, wrong account membership, safe-range differences, stale and forged previews, corrupt stored evidence, immediate writer locking, and one-snapshot register coverage.
+- Terminal checks cover complete script input, strict flags, unavailable IDs, local date defaults and explicit overrides, cancellation, signed debt output, and retained original evidence. The hand-edited map includes mismatch, match, repeat confirmation, metadata correction, and evidence/coverage inspection.
+
+- Verification: lint and typecheck passed. The final focused run passed six files and 26 tests: the three reconciliation files, the feature map, and adjacent transaction integration/CLI checks. The initial focused reconciliation run passed 14 tests after the boundary additions.
+
+- The lead's full run exposed two five-second CLI workflow timeouts with 244 other tests passing. An isolated rerun passed both affected files; the account workflow took 2197 ms and the transaction workflow took 1885 ms. Installed Vitest uses `availableParallelism() - 1` workers by default, which is 11 on this 12-core host. CLI and policy workers also spawn separate processes. A full trial with `--maxWorkers=4` passed all 246 tests; the affected workflows took 2473 ms and 2113 ms. The config now limits workers to four to bound that shared CPU load. Test and child-process timeouts remain unchanged. The full trial needed the same local IPC access as the existing build check.
+
+- The lead agent verified terminal cancellation against a temporary synthetic Credit account. The prompt showed the local cutoff default, explicit database target, account revision, bank/computed balance of USD -100.00, zero difference, and the signed debt explanation. Answering `no` and pressing Ctrl+C at confirmation each returned 0 with canceled output. A fresh process listed no reconciliations. The temporary database directory was removed.
+- Independent specification and code quality reviews approved Task 8 with no remaining material findings. The stale design status sentence was corrected and rechecked. The quality reviewer also approved the worker limit after reviewing the diagnosis evidence.
+- Final lead-agent `npm run check` passed: 27 test files and 246 tests, plus document, tracked-path, boundary, formatting, lint, type, secret, and build checks. No external service or household data was used.
+
+Task 8 is complete. The task commit is `feat: reconcile cleared balances with bank records`. Task 9 remains open. The four accepted development-dependency audit findings remain unchanged.

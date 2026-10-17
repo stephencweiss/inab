@@ -63,6 +63,7 @@ export type TransactionPreview = {
   recordedAt: string;
 };
 export type TransactionSession = {
+  reconciliations: (id: string) => Reconciliation[];
   account: (id: string) => StoredAccount | null;
   get: (id: string) => ManualTransaction | null;
   entries: (id: string) => ManualTransaction[];
@@ -72,4 +73,37 @@ export type TransactionSession = {
 export type TransactionStore = {
   read: <T>(work: (session: TransactionSession) => T) => T;
   write: <T>(work: (session: TransactionSession) => T) => T;
+};
+
+export type Reconciliation = import("../accounts/reconciliation.js").ReconciliationSnapshot & {
+  id: string;
+  status: "valid" | "needs-review";
+  recordedAt: string;
+};
+export type ReconciliationPreview =
+  import("../accounts/reconciliation.js").ReconciliationSnapshot & {
+    operationId: string;
+    recordedAt: string;
+  };
+export type ReconciliationFailure =
+  | "account-unavailable"
+  | "stale-version"
+  | "balance-mismatch"
+  | "invalid-reconciliation"
+  | "invalid-date"
+  | "cutoff-before-opening"
+  | "future-date"
+  | "tracking-register"
+  | "unsafe-cents";
+export type ReconciliationResult<T> =
+  { ok: true; value: T } | { ok: false; reason: ReconciliationFailure };
+export type ReconciliationSession = {
+  account: (id: string) => StoredAccount | null;
+  entries: (id: string) => ManualTransaction[];
+  reconciliations: (id: string) => Reconciliation[];
+  save: (preview: ReconciliationPreview) => Reconciliation;
+};
+export type ReconciliationStore = {
+  read: <T>(work: (session: ReconciliationSession) => T) => T;
+  write: <T>(work: (session: ReconciliationSession) => T) => T;
 };

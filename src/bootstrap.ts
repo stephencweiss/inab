@@ -1,3 +1,5 @@
+import { createReconciliations } from "./application/reconcile.js";
+import { createReconciliationStore } from "./storage/reconciliations.js";
 import { createTransactions } from "./application/transactions.js";
 import { createTransactionStore } from "./storage/transactions.js";
 import { randomUUID } from "node:crypto";
@@ -19,6 +21,14 @@ export function accountApplication(path: string) {
 
 export function transactionApplication(path: string) {
   return createTransactions(createTransactionStore(path), {
+    id: randomUUID,
+    now: () => new Date().toISOString(),
+    today: localToday,
+  });
+}
+
+export function reconciliationApplication(path: string) {
+  return createReconciliations(createReconciliationStore(path), {
     id: randomUUID,
     now: () => new Date().toISOString(),
     today: localToday,

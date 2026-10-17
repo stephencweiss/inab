@@ -1,3 +1,4 @@
+import { readReconciliations } from "./reconciliations.js";
 import { eq } from "drizzle-orm";
 import type {
   TransactionPreview,
@@ -34,6 +35,7 @@ function save(db: Queries, preview: TransactionPreview) {
 }
 function sessionFor(db: Queries): TransactionSession {
   return {
+    reconciliations: (id) => readReconciliations(db, id),
     account: (id) => {
       const row = db.select().from(accounts).where(eq(accounts.id, id)).get();
       return row ? parseAccountRow(row) : null;

@@ -26,8 +26,8 @@ function unwrap<T>(result: TransactionResult<T>) {
   };
   throw new InvalidInput(messages[reason] ?? reason);
 }
-function render(entry: ManualTransaction) {
-  const clearance = entry.postedOn === null ? "uncleared" : `cleared ${entry.postedOn}`;
+function render(entry: ManualTransaction, status = "cleared") {
+  const clearance = entry.postedOn === null ? "uncleared" : `${status} ${entry.postedOn}`;
   return `${entry.id} | revision ${entry.revision} | ${entry.occurredOn} | ${clearance} | USD ${formatCents(entry.cents)} | ${entry.payee} | ${entry.memo}`;
 }
 function output(json: boolean, result: object, text: string) {
@@ -54,14 +54,11 @@ export async function executeTransaction(command: TerminalCommand, prompts: Term
   const app = transactionApplication(command.database);
   if (command.action === "register") {
     const result = unwrap(app.register(command.id ?? ""));
-    const entries = result.entries.map((entry) => ({
-      ...entry,
-      clearance: entry.postedOn === null ? "uncleared" : "cleared",
-    }));
+    const entries = result.entries;
     output(
       command.json,
       { ok: true, ...result, entries },
-      `${renderInspection(result.account, result.balances)}\n${result.entries.map(render).join("\n")}`,
+      `${renderInspection(result.account, result.balances)}\n${result.entries.map((entry) => render(entry, entry.clearance)).join("\n")}`,
     );
     return;
   }
