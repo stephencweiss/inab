@@ -1,7 +1,7 @@
 # Adopt structured agent workflow
 
 Date: October 17, 2026
-Status: user requested adoption of relevant conventions and automated enforcement. Documentation is adopted; executable checks are planned.
+Status: accepted. The conventions and the check baseline are in use. Application workflows are not started.
 
 ## Decision
 
@@ -35,4 +35,10 @@ Add a full CI check beyond SuChef's observed local hook. Stage tooling with the 
 
 ## Result
 
-The current change creates documentation and local ignore rules only. It does not initialize Git, install dependencies, activate hooks, configure a remote, or run live provider operations. Runtime choice remains proposed in the project design.
+Git is initialized, and the remote is `https://github.com/stephencweiss/inab.git`. npm uses the public registry `https://registry.npmjs.org/`. Checks use Node.js 24.16.0.
+
+`npm run check` runs document, tracked-path, format, lint, type, test, and secret checks. The commit hook runs the document check, the tracked-path check, and lint. GitHub Actions runs the full check. Required merge protection is not confirmed.
+
+The lint setup follows the reviewed SuChef checkout: every Sonar recommended rule is named, cognitive complexity is 15, and ESLint complexity is 20. Custom rules cover JSDoc comments, explicit interfaces, redundant types, and TypeScript source files. SuChef exceptions for form data and `src/lib` are not copied.
+
+Drizzle, the feature map, and application workflows remain outside this baseline. No live provider operation is run.

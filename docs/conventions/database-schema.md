@@ -2,11 +2,15 @@
 
 Status: required implementation standard; automated enforcement is planned.
 
-Adapted from SuChef's database schema convention. PostgreSQL grants and Drizzle configuration are not copied into INAB.
+Adapted from SuChef's database schema convention for Drizzle and SQLite. PostgreSQL grants are not used.
 
 Record schema changes as ordered migrations in source control. Review their SQL. Never edit a migration already applied to a persistent database; add another migration.
 
-Keep one authoritative schema definition. If a schema generator is selected, make its inputs explicit and verify that every schema module is included. If SQL migrations are authoritative, do not maintain a second handwritten schema copy.
+Drizzle TypeScript table definitions are the schema authority. List every schema file explicitly in `drizzle.config.ts`; do not use a glob or a barrel to hide new files. Use the SQLite dialect. Verify that all schema files are included.
+
+Generate migrations with Drizzle Kit. Review and commit the SQL and generated metadata together. Use a custom migration in the same chain for triggers or other SQL that Drizzle cannot represent. Apply through the application's target-aware, backup-first migration command and the Drizzle migrator. Do not maintain a second migration runner or use `drizzle-kit push` against persistent data.
+
+Define database CHECK constraints explicitly; inferred TypeScript types do not enforce them. Test the applied schema, migration history validation, and rollback behavior. Keep the ORM and Kit versions compatible and pinned.
 
 Before applying a migration to household data, create a usable backup. Test upgrades on a temporary copy. Do not assume every migration can run backward; document restore-based recovery when needed.
 

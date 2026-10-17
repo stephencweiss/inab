@@ -20,4 +20,4 @@ Skip it when the name and types already say what the function does. `isRecord` a
 
 ## Comment form
 
-In `src/`, comments follow this format rule. The planned `only-jsdoc/only-jsdoc-comments` lint rule will enforce it; it is not installed yet. A comment is a JSDoc block. A line comment stays only when it starts with `approved:` and a reason. Tests are exempt from that lint rule. This convention still applies to test helpers: document a non-obvious constraint, and skip a comment that restates the name.
+In `src/`, comments follow this format rule. `only-jsdoc/only-jsdoc-comments` enforces it. A comment is a JSDoc block. A line comment stays only when it starts with `approved:` and a reason. Tests are exempt from that lint rule. This convention still applies to test helpers: document a non-obvious constraint, and skip a comment that restates the name.

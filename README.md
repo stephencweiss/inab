@@ -2,7 +2,9 @@
 
 A personal envelope-budgeting app for one household. Terminal first; protected family web access later.
 
-Status: design and conventions only. No application, linter, test runner, commit hook, or CI workflow is installed yet.
+Status: terminal help and the check baseline are installed. No account workflow is implemented yet.
+
+Run `npm run inab -- --help` for command status. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
 Start with the [document guide](docs/README.md), [project design](docs/superpowers/specs/2026-10-17-inab-design.md), and [verification plan](docs/verification.md).
 

@@ -1,45 +1,43 @@
 # Verification and enforcement
 
-Status: implementation plan for checks. No application tooling or CI is active yet.
+Status: the check baseline runs locally and in GitHub Actions. Application workflows and import-boundary rules are not active yet.
 
 Prefer rules that fail automatically over instructions an agent must remember. Each check needs a valid example that passes and an invalid example that fails. Use existing tools before writing custom rules. Tests must verify behavior, not repeat the implementation.
 
 ## Enforcement plan
 
-| Rule | Planned check | Required by |
-| --- | --- | --- |
-| Conventions have matching indexes and valid local links | Document check | First tooling change |
-| Application source uses TypeScript | Source-file check | First application code |
-| Contracts are complete and inputs are parsed | Strict types, scoped interface lint rules, parser tests | First application code |
-| Types and comments do not repeat code | Type inference, assertion, and JSDoc lint rules | First application code |
-| Modules use permitted dependencies | Import boundary checks, including aliases | First application code |
-| Private data and secrets stay out of source and CI | Tracked-path policy and secret scan; inspect publish scope | First commit and every CI run |
-| Manual accounts and balances work without providers | Register, clearing, reconciliation, and opening-boundary tests | Slice 1 |
-| Imports preserve identity and commit atomically | Synthetic import fixtures and database integration tests | Slice 2 |
-| Migrations and restore preserve data | Temporary database upgrade and backup restore tests | First persisted data |
-| Budget money remains correct | Accounting examples and invariant tests | Slice 3 |
-| Split amounts remain correct | Parent/allocation sum tests | First split support |
-| Documented workflows work | Feature-map schema and terminal execution tests | First working workflow |
-| Provider sync handles retries, updates, and manual overlap | Fixture-based adapter tests, reviewed matching, and pre-opening history tests | Slice 4 |
-| Private web responses require login | Access, session, and cache tests | Web slice |
+| Rule | Check | Status | Required by |
+| --- | --- | --- | --- |
+| Conventions have matching indexes and valid local links | Document check | Active | First tooling change |
+| Application source uses TypeScript | Source-file check | Active | First application code |
+| Contracts are complete and inputs are parsed | Strict types and scoped interface lint rules; parser tests remain planned | Active for the lint rules | First application code |
+| Types and comments do not repeat code | Type inference, assertion, and JSDoc lint rules | Active | First application code |
+| Modules use permitted dependencies | Import boundary checks, including aliases | Planned | First application code |
+| Private data and secrets stay out of source and CI | Tracked-path policy and secret scan; inspect publish scope | Active | First commit and every CI run |
+| Manual accounts and balances work without providers | Register, clearing, reconciliation, and opening-boundary tests | Planned | Slice 1 |
+| Imports preserve identity and commit atomically | Synthetic import fixtures and database integration tests | Planned | Slice 2 |
+| Migrations and restore preserve data | Temporary database upgrade and backup restore tests | Planned | First persisted data |
+| Budget money remains correct | Accounting examples and invariant tests | Planned | Slice 3 |
+| Split amounts remain correct | Parent/allocation sum tests | Planned | First split support |
+| Documented workflows work | Feature-map schema and terminal execution tests | Planned | First working workflow |
+| Provider sync handles retries, updates, and manual overlap | Fixture-based adapter tests, reviewed matching, and pre-opening history tests | Planned | Slice 4 |
+| Private web responses require login | Access, session, and cache tests | Planned | Web slice |
 
 Financial rules need runtime validation, database constraints, and tests. Lint alone cannot prove balanced amounts or correct migration.
 
-## Planned local and CI entry point
+## Local and CI entry point
 
-Add one `npm run check` command when the TypeScript/Node setup is confirmed. It will run document checks, formatting checks, lint, type checks, focused unit and integration suites, and the terminal workflow checks available at that stage. Add the build check with the first runnable command. These commands do not exist yet.
+`npm run check` runs the document check, the tracked-path check, Prettier, ESLint, `tsc --noEmit`, Vitest, and Secretlint. It also runs CLI subprocess tests and builds the terminal entry point with TypeScript. Help and invalid-command handling are verified; account workflows remain planned.
 
-The local commit hook should run quick staged checks. CI must run the complete required set even when hooks are skipped. Do not run destructive formatting or file writes in CI checks.
+The commit hook runs the document check, the tracked-path check, and lint. CI runs `npm run check` for pull requests and for `main`. The workflow uses Node.js 24.16.0, `npm ci`, read-only repository permissions, and pinned action commits. Do not run destructive formatting or file writes in CI checks. Do not expose secrets to pull requests or upload household databases or raw provider payloads as artifacts.
 
-When a remote repository exists, use a CI workflow for pull requests and default-branch changes. Use a pinned runtime, a committed lockfile, frozen dependency installation, and read-only repository permissions. Pin third-party actions to reviewed commit SHAs. Do not expose secrets to pull requests or use privileged pull-request execution for untrusted code. Do not upload household databases or raw provider payloads as artifacts.
-
-Make the CI result a required merge check through repository settings. A workflow file alone does not prevent a merge. Confirm that the selected hosting plan supports this setting. Local hooks are convenience checks, not an access boundary.
+The workflow file does not make the check required for merge. That repository setting is still open. Local hooks are convenience checks, not an access boundary.
 
 ## Private data checks
 
-Ignore local data paths before Git setup. Reject tracked exports, database files and sidecars, backups, browser profiles, and real environment files. Allow synthetic fixtures only under the documented fixture path. Check tracked paths, not just `.gitignore` entries. A file can already be tracked, or be added with force.
+Reject exports, database files and sidecars, backups, browser profiles, and real environment files. Allow synthetic fixtures only under `tests/fixtures/`. The check reads tracked files and files Git does not ignore, not just `.gitignore` entries. A file can already be tracked, or be added with force.
 
-Use a maintained secret scanner when tooling is installed. No scanner proves that arbitrary text is free of personal data. Review fixture contents and publish scope. Do not turn real records into public fixtures by changing names alone; create new examples.
+Secretlint scans that same file set, except `package-lock.json`. It does not yet scan older Git blobs. No scanner proves that arbitrary text is free of personal data. Review fixture contents and publish scope. Do not turn real records into public fixtures by changing names alone; create new examples.
 
 ## Completion evidence
 
@@ -53,13 +51,13 @@ When adding a custom lint or policy rule, test that it rejects a representative 
 
 Include these at the start of Slice 1, not as a separate long infrastructure project:
 
-1. Confirm runtime and package manager; select compatible tool versions and create the lockfile.
-2. Add document, tracked-path, lint, type, and test commands with clear failures.
-3. Port relevant SuChef custom rules with their tests; adapt path and framework exceptions.
-4. Add the quick local hook and the full check command.
-5. Add CI when a remote exists and verify a failed check blocks merge through repository settings.
-6. Build the first manual-account workflow against synthetic fixtures and document its terminal commands.
+1. Done: Node.js 24.16.0, npm, the public registry, and the lockfile.
+2. Done: document, tracked-path, lint, type, and test commands.
+3. Done for JSDoc comments, explicit interfaces, redundant types, TypeScript source files, and Sonar complexity. Import boundary rules remain planned. SuChef exceptions for form data and `src/lib` are not copied.
+4. Done: the Husky hook and `npm run check`.
+5. The workflow file is present. Required merge protection is not confirmed.
+6. Not done: the first manual-account workflow and its feature map.
 
 ## SuChef evidence
 
-The reviewed checkout has strict TypeScript, ESLint custom rules, lint rule tests, a feature map with unit/browser checks, and a Husky hook that runs lint and feature-map validation. Its hook does not run all tests or type checks. No `.github` directory was present. INAB's CI plan adds enforcement beyond that observed setup.
+The reviewed checkout has strict TypeScript, ESLint custom rules, lint rule tests, a feature map with unit/browser checks, and a Husky hook that runs lint and feature-map validation. Its hook does not run all tests or type checks. No `.github` directory was present. INAB now has a hook and a CI workflow. The feature-map check starts with the first working workflow.

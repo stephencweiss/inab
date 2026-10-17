@@ -5,6 +5,10 @@
 | Document | Authority |
 | --- | --- |
 | [Project design](superpowers/specs/2026-10-17-inab-design.md) | Agreed product scope, proposed architecture, and build sequence |
+| [Slice 1 implementation plan](superpowers/plans/2026-10-17-slice-1-manual-accounts.md) | Tasks and checks for manual accounts, reconciliation, Tracking snapshots, and recovery |
+| [Budget currency decision](decisions/2026-10-17-budget-currency.md) | Agreed USD budget |
+| [Manual-account defaults decision](decisions/2026-10-17-manual-account-defaults.md) | Agreed opening balance and reconciliation defaults |
+| [Drizzle and SQLite decision](decisions/2026-10-17-drizzle-sqlite.md) | Agreed ORM, schema types, and migration approach |
 | [Verification plan](verification.md) | Required evidence, planned checks, and current enforcement status |
 | [Convention adoption decision](decisions/2026-10-17-agent-conventions.md) | What we adopted from SuChef and what we changed |
 

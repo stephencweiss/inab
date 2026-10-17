@@ -1,6 +1,6 @@
 # Type inference
 
-Status: required implementation standard; automated enforcement is planned.
+Status: required implementation standard. Strict TypeScript, redundant-type checks, and unnecessary assertion checks are active.
 
 Adapted from SuChef's type inference convention.
 
@@ -8,6 +8,6 @@ Let TypeScript infer local values and callback parameters. Write types for publi
 
 Prefer a parser or guard over a cast. A cast must have a reason that the surrounding code or a short JSDoc block makes clear. Do not use `any` or double assertions to avoid a type error.
 
-Define a stored row shape once at the storage boundary. If the selected database library supports schema-derived types, use them. No ORM is selected yet; this convention does not select Drizzle. Keep validated commands and display models separate from stored rows.
+Derive stored rows from the Drizzle table with `$inferSelect` and accepted insert shapes with `$inferInsert`. Put needed exported types beside their table. Do not copy columns into handwritten interfaces. Preserve the inferred shape of partial query selections. Keep validated commands and display models separate from stored rows. Validate raw inputs and raw SQL results at their boundary; inferred query types do not prove runtime data validity.
 
-Planned enforcement: strict TypeScript, unnecessary assertion checks, and redundant type checks. Port custom SuChef inference rules only with their valid and invalid test cases.
+The redundant-type rule is installed with valid and invalid cases. It reports an annotation that copies an inferred type, a redundant callback parameter type, and a type predicate on an unnamed callback.

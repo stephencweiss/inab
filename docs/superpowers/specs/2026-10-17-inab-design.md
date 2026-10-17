@@ -13,10 +13,11 @@ Keep running costs and maintenance low. Each build slice must produce a working 
 
 - One shared household plan per installation.
 - Budget currency: USD.
+- Use Drizzle ORM with better-sqlite3 and SQLite; generate and review migrations with Drizzle Kit.
 - Match YNAB's envelope budgeting behavior as the starting point.
 - Assign money already held; carry unused category balances forward; move money to cover overspending.
 - Use Cash, Credit, and Tracking account classes.
-- Keep Tracking balances outside the budget. Periodic balance updates are enough; individual tracking transactions are not required for ongoing use.
+- Keep Tracking balances outside the budget. Slice 1 supports periodic balance updates only. Individual Tracking transactions may be supported later, after defining their interaction with snapshots to prevent double counting.
 - Support full YNAB history import as a product feature.
 - Select the active start month during terminal or web setup. Do not hardcode a month.
 - Support local accounts and manual transactions without YNAB or Plaid.
@@ -30,7 +31,7 @@ Keep running costs and maintenance low. Each build slice must produce a working 
 
 ## Starting evidence
 
-The project folder currently has exports and no application code or Git repository.
+The project folder has exports, documentation, and a Git repository. The remote is `https://github.com/stephencweiss/inab.git`. Application implementation has not started.
 
 Read-only inspection found:
 
@@ -45,7 +46,7 @@ Reconcile v1.9 contains Python code for local Amazon browser access, order match
 
 ## Proposed architecture
 
-Use one TypeScript/Node.js application and one SQLite database from the first terminal version. The user confirmed this runtime and storage choice on October 17, 2026. The remaining architecture details below are proposed.
+Use one TypeScript/Node.js application and one SQLite database from the first terminal version. The user confirmed this runtime and storage choice on October 17, 2026. Checks use Node.js 24.16.0 and npm. The user also selected Drizzle ORM with better-sqlite3 and Drizzle Kit. Define tables in TypeScript, derive row types from them, and review generated SQL migrations before applying them. The remaining architecture details below are proposed.
 
 Keep four boundaries within the application:
 
@@ -60,7 +61,7 @@ The budget currency is USD, confirmed October 17, 2026. Store monetary values as
 
 Keep private exports, databases, browser profiles, model inputs, and credentials outside version control. Use small synthetic fixtures for public tests. Before the first commit, create ignore rules and check the staged files.
 
-Use the [document guide](../../README.md) for document authority and the [verification guide](../../verification.md) for enforcement status. The [convention adoption decision](../../decisions/2026-10-17-agent-conventions.md) records what was copied or adapted from SuChef. Conventions are documented now; executable tooling is not installed yet.
+Use the [document guide](../../README.md) for document authority and the [verification guide](../../verification.md) for enforcement status. The [convention adoption decision](../../decisions/2026-10-17-agent-conventions.md) records what was copied or adapted from SuChef.
 
 ## Budget language and rules
 (We should pull this into a doc/ as part of a general knowledge base so that we know we can always reference back to it and we're consistent in our use of terminology)
@@ -159,7 +160,7 @@ Workflow: create a local account, choose its class, set a dated opening balance,
 
 Include permanent local IDs, manual clearing state, explicit opening-balance boundaries, safe local storage, and backup/restore. Keep account balances separate from envelope budgeting, which arrives in Slice 3. Show unresolved balance differences; never silently add a balancing transaction.
 
-Start this slice with the small tooling setup in the verification guide: document checks, lint, strict types, synthetic fixtures, private-data checks, and one full check command. Add the terminal feature map with the first working manual-account workflow. Add CI when the remote repository exists. Keep tooling tied to that useful workflow.
+The check baseline in the verification guide is installed, including CI. Add the terminal feature map with the first working manual-account workflow.
 
 Done when: an account works without any import or provider; manual edits produce the expected balance; cleared and uncleared amounts remain distinct; reconciliation records its balance and date; Tracking snapshots work; failed writes leave no partial change; restored data matches the backup. Edits to reconciled history must flag the affected reconciliation for review.
 
@@ -199,7 +200,7 @@ Done when: splits sum exactly; corrections update the plan; undo restores relate
 
 Workflow: request balance updates, review missing values, and view month-end history. Add a due-update check when the local app starts.
 
-Store amount, currency, source, fetched time, and effective date. Use historical month-end data only when the provider actually supplies it. A current balance fetched later must not be labeled as a past month-end balance. Retrying an update must not create duplicate snapshots.
+Store amount, currency, source, fetched time, and effective date. Display the latest snapshot as the last known balance with its effective date, not as a verified present balance. Use historical month-end data only when the provider actually supplies it. A current balance fetched later must not be labeled as a past month-end balance. Retrying an update must not create duplicate snapshots.
 
 Done when: missed runs catch up honestly; stale values are flagged; manual entries work for unsupported accounts; changes never affect budget money. Always-on scheduling can follow deployment. Balance updates do not verify individual transactions.
 
@@ -241,7 +242,7 @@ Each self-hosting household supplies its own credentials. Do not distribute shar
 
 Defer multiple plans, multi-currency conversion, investment transaction analysis, advanced reports, mobile apps, and fully automatic AI classification.
 
-Settled for Slice 1: TypeScript/Node.js with SQLite; USD; opening balances at the close of the selected date; and Uncleared, Cleared, and Reconciled statuses. Reconciliation compares cleared records with the bank's posted balance and never adds a silent adjustment. See the [manual-account defaults decision](../../decisions/2026-10-17-manual-account-defaults.md).
+Settled for Slice 1: TypeScript/Node.js with Drizzle ORM, better-sqlite3, SQLite, and Drizzle Kit; USD; opening balances at the close of the selected date; and Uncleared, Cleared, and Reconciled statuses. Reconciliation compares cleared records with the bank's posted balance and never adds a silent adjustment. See the [manual-account defaults decision](../../decisions/2026-10-17-manual-account-defaults.md).
 
 Resolve before Slice 2: actual split encoding, import preview/report format, and review of overlapping manual and exported history.
 
@@ -251,7 +252,7 @@ Resolve later: recurring entries and targets, local model hardware, per-person w
 
 ## Next step
 
-Review this design. Then write a detailed implementation plan for Slice 1 only, with small tasks and meaningful manual-account, balance, reconciliation, and recovery tests. Use that working local account model as the foundation for Slice 2 imports and Slice 4 Plaid links. No application implementation has started.
+Review the [Slice 1 implementation plan](../plans/2026-10-17-slice-1-manual-accounts.md), which defines tasks and checks for manual accounts, balances, reconciliation, and recovery. Use that working local account model as the foundation for Slice 2 imports and Slice 4 Plaid links. No application implementation has started.
 
 ## References
 
