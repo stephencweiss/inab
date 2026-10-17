@@ -10,7 +10,7 @@ Prefer rules that fail automatically over instructions an agent must remember. E
 | --- | --- | --- | --- |
 | Conventions have matching indexes and valid local links | Document check | Active | First tooling change |
 | Application source uses TypeScript | Source-file check | Active | First application code |
-| Contracts are complete and inputs are parsed | Strict types and scoped interface lint rules; parser tests remain planned | Active for the lint rules | First application code |
+| Contracts are complete and inputs are parsed | Strict types and scoped interface lint rules with installed-config policy tests; parser tests remain planned | Active for the lint rules | First application code |
 | Types and comments do not repeat code | Type inference, assertion, and JSDoc lint rules | Active | First application code |
 | Modules use permitted dependencies | Import boundary checks, including aliases | Active | First application code |
 | Private data and secrets stay out of source and CI | Tracked-path policy and secret scan; inspect publish scope | Active | First commit and every CI run |

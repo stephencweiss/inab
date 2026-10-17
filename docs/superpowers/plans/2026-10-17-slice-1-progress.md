@@ -56,3 +56,16 @@ Scope: document fixtures, private-path checks, source import boundaries, and the
 - Independent specification and code quality reviews approved Task 2 with no material findings. The lead agent also ran the full check: 12 test files and 86 tests passed, with all checks and the build passing.
 
 Task 2 is complete. The task commit is `chore: enforce source and private-data boundaries`. Later account workflows remain open.
+
+## October 17, 2026 — Task 3
+
+Scope: focused contract, inference, and comment lint rules. No account operation is added. The existing rules were active before this task; they were moved into `tools/eslint-plugin-inab/` and loaded as the `inab` plugin. Existing unit tests now use the moved sources. The TypeScript-only source rule remains separate. No package change was needed.
+
+- Inspected the matching SuChef rules and interface/comment tests. Its focused sources and package metadata contained no license notices. Existing INAB changes remain: `approved:` comments, no form-data or shared-helper exemptions, and raw input fields allowed only for named raw types in adapters.
+- Red: `npm test -- tests/policy/lint-rules.test.ts` passed 18 existing-behavior cases and failed three new scope cases. The raw-input exception incorrectly reached a method's output. An `unknown[]` operation parameter was missed. A guard accepted an unrelated `unknown` parameter. An initial test-helper parser setup error for non-TypeScript files was corrected before recording this red result.
+- Green: all 21 installed-configuration tests passed after the focused fixes. They also verify domain/application fields, undefined results, raw adapter inputs, complete adapter outputs, SDK contract references, parsers, row validators, guards, tagged unions, redundant annotations, standard assertion/literal checks, source/test comments, and source/tool extensions. Existing standalone unit coverage remains active.
+- The unknown rule checks direct and nested written parameter annotations; it does not resolve type aliases or prove that a parser validates data. Raw-input optional-field exceptions stop at function boundaries. A guard exemption applies only to its checked parameter.
+- Review red and green: an added rest-parameter case failed because the parser stores its annotation on the rest node. The rule now reads that annotation before checking the argument. Typed rest parameters and parser rest inputs remain allowed. All 23 focused policy tests pass.
+- Verification: focused tests, `npm run lint`, and `npm run typecheck` passed. `npm run check` passed all document, private-path, boundary, format, lint, type, test, secret, and build checks: 13 test files and 109 tests. The runner needed broader local execution access for its IPC socket, as in Task 2.
+
+Independent specification review passed. Code quality review found the rest-parameter gap recorded above, then approved the fix with no remaining material findings. Task 3 is complete. The task commit is `chore: enforce explicit contracts and useful comments`. Task 4 remains open.

@@ -2,9 +2,7 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import globals from "globals";
 import sonarjs from "eslint-plugin-sonarjs";
-import onlyJsdocComments from "./tools/eslint-plugin-only-jsdoc/only-jsdoc-comments.cjs";
-import typeInferenceRules from "./tools/eslint-plugin-type-inference/rules.cjs";
-import explicitInterfaceRules from "./tools/eslint-plugin-explicit-interfaces/rules.cjs";
+import inab from "./tools/eslint-plugin-inab/index.cjs";
 import typescriptSourceOnly from "./tools/eslint-plugin-typescript-only/typescript-source-only.cjs";
 
 const tsconfigRootDir = import.meta.dirname;
@@ -20,21 +18,17 @@ export default tseslint.config(
       globals: globals.node,
     },
     plugins: {
-      "only-jsdoc": {
-        rules: {
-          "only-jsdoc-comments": onlyJsdocComments,
-        },
-      },
+      inab,
     },
     rules: {
-      "only-jsdoc/only-jsdoc-comments": ["error", { allow: ["^approved:\\s*\\S"] }],
+      "inab/only-jsdoc-comments": ["error", { allow: ["^approved:\\s*\\S"] }],
       "no-warning-comments": ["error", { terms: ["todo", "fixme"], location: "anywhere" }],
     },
   },
   {
     files: ["**/*.test.ts"],
     rules: {
-      "only-jsdoc/only-jsdoc-comments": "off",
+      "inab/only-jsdoc-comments": "off",
     },
   },
   {
@@ -48,28 +42,18 @@ export default tseslint.config(
         tsconfigRootDir,
       },
     },
-    plugins: {
-      "type-inference": {
-        rules: typeInferenceRules,
-      },
-    },
     rules: {
-      "type-inference/no-redundant-type": "error",
+      "inab/no-redundant-type": "error",
       "@typescript-eslint/no-unnecessary-type-assertion": "error",
       "@typescript-eslint/no-inferrable-types": ["error", { ignoreParameters: true }],
     },
   },
   {
     files: ["src/**/*.ts"],
-    plugins: {
-      "explicit-interfaces": {
-        rules: explicitInterfaceRules,
-      },
-    },
     rules: {
-      "explicit-interfaces/no-optional-property": "error",
-      "explicit-interfaces/no-undefined-type": "error",
-      "explicit-interfaces/unknown-only-in-parser": "error",
+      "inab/no-optional-property": "error",
+      "inab/no-undefined-type": "error",
+      "inab/unknown-only-in-parser": "error",
     },
   },
   {

@@ -14,9 +14,9 @@ The latest user instruction takes precedence over repository guidance. State unr
 
 - [Maintain convention files and indexes](docs/conventions/writing-conventions.md)
 - [Test executable behavior before implementation](docs/conventions/red-green-development.md)
-- [Define explicit values and validate inputs](docs/conventions/interfaces.md)
-- [Avoid redundant types and unsafe casts](docs/conventions/type-inference.md)
-- [Document constraints without repeating code](docs/conventions/jsdoc.md)
+- [Define complete values and validate inputs](docs/conventions/interfaces.md)
+- [Use inferred types and safe guards](docs/conventions/type-inference.md)
+- [Document constraints and check comment forms](docs/conventions/jsdoc.md)
 - [Place helpers and check module boundaries](docs/conventions/utilities.md)
 - [Keep database operations safe and atomic](docs/conventions/database-access-rules.md)
 - [Review migrations and verify recovery](docs/conventions/database-schema.md)

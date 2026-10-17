@@ -149,12 +149,12 @@ Before each task commit, run the listed focused checks plus `npm run lint` and `
 **Create:** `tools/eslint-plugin-inab/{index,interfaces,type-inference,comments}.cjs`, `tests/policy/lint-rules.test.ts`.
 **Modify:** `eslint.config.mjs`, relevant convention enforcement-status lines, `package.json`.
 
-- [ ] Inspect the corresponding SuChef rule code and tests. Copy/adapt only these rules; preserve any license notices. Keep standard ESLint rules for unnecessary assertions and inferable literal types.
-- [ ] Write valid/invalid rule tests for optional application fields, undefined result types, unparsed unknown inputs, redundant annotations, and comment forms. Include legal parser input, SDK boundary types, type guards, tagged unions, and test comments.
-- [ ] Run `npm test -- tests/policy/lint-rules.test.ts`; expect missing-rule failures.
-- [ ] Implement scope-aware rules. Domain/application records must be complete; raw parser inputs can be optional. Unknown is allowed at parsers, row validators, and guards; it must not reach budget operations. Avoid blanket adapter-folder exemptions for application outputs. Application source must be `.ts` (later `.tsx` when UI arrives); config/tool files may use `.mjs`/`.cjs`.
-- [ ] Run focused tests, `npm run lint`, and `npm run typecheck`; expect pass for legitimate code and failure for each violation fixture.
-- [ ] Commit: `chore: enforce explicit contracts and useful comments`.
+- [x] Inspect the corresponding SuChef rule code and tests. Copy/adapt only these rules; preserve any license notices. Keep standard ESLint rules for unnecessary assertions and inferable literal types.
+- [x] Write valid/invalid rule tests for optional application fields, undefined result types, unparsed unknown inputs, redundant annotations, and comment forms. Include legal parser input, SDK boundary types, type guards, tagged unions, and test comments.
+- [x] Run `npm test -- tests/policy/lint-rules.test.ts`; confirm failures for the missing scope checks. Existing rule behavior was already present.
+- [x] Implement scope-aware rules. Domain/application records must be complete; raw parser inputs can be optional. Unknown is allowed at parsers, row validators, and guards; it must not reach budget operations. Avoid blanket adapter-folder exemptions for application outputs. Application source must be `.ts` (later `.tsx` when UI arrives); config/tool files may use `.mjs`/`.cjs`.
+- [x] Run focused tests, `npm run lint`, and `npm run typecheck`; expect pass for legitimate code and failure for each violation fixture.
+- [x] Commit: `chore: enforce explicit contracts and useful comments`.
 
 ### Task 4 — Money, dates, and balance examples
 

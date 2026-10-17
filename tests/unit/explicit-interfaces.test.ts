@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
 const parser = require("@typescript-eslint/parser");
-const rules = require("../../tools/eslint-plugin-explicit-interfaces/rules.cjs");
+const rules = require("../../tools/eslint-plugin-inab/interfaces.cjs");
 
 const linter = new Linter({ configType: "flat" });
 

@@ -1,6 +1,6 @@
 # Type inference
 
-Status: required implementation standard. Strict TypeScript, redundant-type checks, and unnecessary assertion checks are active.
+Status: required implementation standard. Strict TypeScript, redundant-type checks, and unnecessary assertion checks and their policy tests are active.
 
 Adapted from SuChef's type inference convention.
 

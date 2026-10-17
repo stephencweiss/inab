@@ -1,6 +1,6 @@
 # JSDoc
 
-Status: required implementation standard.
+Status: required implementation standard. Comment form checks and their policy tests are active.
 
 A function does not need a JSDoc block. The name, the TypeScript signature, and the tests are the documentation. Add a block only when those three leave out something a caller must not miss.
 
@@ -20,4 +20,4 @@ Skip it when the name and types already say what the function does. `isRecord` a
 
 ## Comment form
 
-In `src/`, comments follow this format rule. `only-jsdoc/only-jsdoc-comments` enforces it. A comment is a JSDoc block. A line comment stays only when it starts with `approved:` and a reason. Tests are exempt from that lint rule. This convention still applies to test helpers: document a non-obvious constraint, and skip a comment that restates the name.
+In `src/`, comments follow this format rule. `inab/only-jsdoc-comments` enforces it. A comment is a JSDoc block. A line comment stays only when it starts with `approved:` and a reason. Tests are exempt from that lint rule. This convention still applies to test helpers: document a non-obvious constraint, and skip a comment that restates the name.

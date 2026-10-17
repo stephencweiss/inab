@@ -3,7 +3,7 @@ import { Linter } from "eslint";
 import { describe, expect, it } from "vitest";
 
 const require = createRequire(import.meta.url);
-const rule = require("../../tools/eslint-plugin-only-jsdoc/only-jsdoc-comments.cjs");
+const rule = require("../../tools/eslint-plugin-inab/comments.cjs");
 
 const linter = new Linter({ configType: "flat" });
 

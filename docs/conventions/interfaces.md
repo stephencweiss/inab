@@ -1,6 +1,6 @@
 # Explicit interfaces
 
-Status: required implementation standard. The interface lint rules are active. Import boundary checks are active.
+Status: required implementation standard. The scoped interface lint rules and their policy tests are active. Import boundary checks are active.
 
 Adapted from SuChef's interfaces convention.
 
@@ -14,4 +14,4 @@ Do not change external SDK contracts to make them resemble ours. Normalize them 
 
 Add factories only when callers need them. Keep each factory beside its owned type. Do not use casts to bypass validation.
 
-The installed rules reject optional properties, `undefined` in types, and `unknown` outside a `parse` or `validate` function. A function name does not prove that the function validates its input. Import boundary checks are active; parser tests remain planned. SuChef exceptions for form data and every file in `src/lib` are not copied.
+The installed `inab` rules reject optional properties and `undefined` in types. They reject direct and nested `unknown` parameter annotations outside a `parse` or `validate` function or the checked parameter of a type guard. Raw input exceptions stop at function boundaries; validated method outputs must remain complete. The unknown rule checks written annotations; it does not resolve type aliases. A function name does not prove that the function validates its input. Import boundary checks are active; parser tests remain planned. SuChef exceptions for form data and every file in `src/lib` are not copied.

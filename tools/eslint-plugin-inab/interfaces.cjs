@@ -41,12 +41,13 @@ function functionName(node) {
   return null;
 }
 
-function isTypePredicate(node) {
+function isGuardParameter(fn, param) {
+  const predicate = fn.returnType?.typeAnnotation;
   return (
-    node.returnType &&
-    node.returnType.type === "TSTypeAnnotation" &&
-    node.returnType.typeAnnotation &&
-    node.returnType.typeAnnotation.type === "TSTypePredicate"
+    predicate?.type === "TSTypePredicate" &&
+    predicate.parameterName.type === "Identifier" &&
+    param.type === "Identifier" &&
+    predicate.parameterName.name === param.name
   );
 }
 
@@ -61,7 +62,7 @@ function unwrapType(node) {
   return current;
 }
 
-function bannedParameterType(annotation) {
+function bannedParameterType(annotation, visitorKeys) {
   const type = unwrapType(annotation);
   if (!type) return null;
   if (type.type === "TSUnknownKeyword") return "unknown";
@@ -76,6 +77,14 @@ function bannedParameterType(annotation) {
   ) {
     return "Record<string, unknown>";
   }
+  for (const key of visitorKeys[type.type] ?? []) {
+    const children = Array.isArray(type[key]) ? type[key] : [type[key]];
+    for (const child of children) {
+      if (!child || FUNCTION_NODES.has(child.type)) continue;
+      const banned = bannedParameterType(child, visitorKeys);
+      if (banned) return banned;
+    }
+  }
   return null;
 }
 
@@ -89,15 +98,17 @@ function isParameterName(node) {
 
 function parameterAnnotation(param) {
   if (param.type === "AssignmentPattern") return parameterAnnotation(param.left);
-  if (param.type === "RestElement" || param.type === "TSParameterProperty") {
-    return parameterAnnotation(param.parameter ?? param.argument);
+  if (param.type === "RestElement") {
+    return param.typeAnnotation ?? parameterAnnotation(param.argument);
   }
+  if (param.type === "TSParameterProperty") return parameterAnnotation(param.parameter);
   return param.typeAnnotation ?? null;
 }
 
 function declarationName(node) {
   let current = node.parent;
   while (current) {
+    if (FUNCTION_NODES.has(current.type) || current.type === "MethodDefinition") return null;
     if (
       current.type === "TSInterfaceDeclaration" ||
       current.type === "TSTypeAliasDeclaration" ||
@@ -223,10 +234,12 @@ const unknownOnlyInParser = {
     function check(node) {
       const name = functionName(node);
       const allowedParser = name ? PARSER_NAME.test(name) : false;
-      const allowedPredicate = isTypePredicate(node);
       for (const param of node.params ?? []) {
-        const banned = bannedParameterType(parameterAnnotation(param));
-        if (!banned || allowedParser || allowedPredicate) continue;
+        const banned = bannedParameterType(
+          parameterAnnotation(param),
+          context.sourceCode.visitorKeys,
+        );
+        if (!banned || allowedParser || isGuardParameter(node, param)) continue;
         context.report({
           node: param,
           messageId: "parserOnly",
