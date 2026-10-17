@@ -31,6 +31,7 @@ Checked exact package metadata through the [official npm registry](https://regis
 - Green: the same focused command passed all 4 tests. Help exits 0; unknown commands and flags, including an unknown flag beside `--help`, exit 2. Tests verify separate output streams and empty temporary working directories.
 - `npm run lint` and `npm run typecheck` passed. Strict NodeNext, `noUncheckedIndexedAccess`, and `exactOptionalPropertyTypes` are enabled.
 - `npm run build` passed and emitted `dist/cli/main.js`. Source and built help matched byte-for-byte in an external temporary directory, with exit 0, empty stderr, and no files created.
+- Independent specification and code-quality reviews approved Task 1 with no material findings.
 - Final `npm run check` passed: 9 test files, 53 tests, plus document, tracked-path, format, lint, type, secret, and build checks. The full check now includes the build.
 
 ### Remaining concerns
