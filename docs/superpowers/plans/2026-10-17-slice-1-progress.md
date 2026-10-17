@@ -69,3 +69,19 @@ Scope: focused contract, inference, and comment lint rules. No account operation
 - Verification: focused tests, `npm run lint`, and `npm run typecheck` passed. `npm run check` passed all document, private-path, boundary, format, lint, type, test, secret, and build checks: 13 test files and 109 tests. The runner needed broader local execution access for its IPC socket, as in Task 2.
 
 Independent specification review passed. Code quality review found the rest-parameter gap recorded above, then approved the fix with no remaining material findings. Task 3 is complete. The task commit is `chore: enforce explicit contracts and useful comments`. Task 4 remains open.
+
+## October 17, 2026 — Task 4
+
+Scope: exact USD cents, date validation, and pure Cash/Credit balance rules. No database or account command is added.
+
+- Red: `npm test -- tests/unit/money.test.ts tests/unit/dates.test.ts tests/unit/balances.test.ts` failed all three suites because the required modules did not exist.
+- Green: the same command passed all 66 tests. Decimal parsing uses integer arithmetic before conversion to safe integer cents. Tests cover both safe limits, invalid decimal forms, unsafe inputs, intermediate overflow, and zero amounts by use.
+- Strict calendar dates stay as strings. Tests reject invalid leap days and run the same date parser in Honolulu, Chicago, and Kiritimati subprocesses. No midnight conversion or system clock is used by domain code.
+- Balance tests verify the synthetic 91500 working / 97500 cleared / -6000 uncleared example, signed credit balances, old pending purchases, posting after the report cutoff, account ownership, and opening boundaries. Tracking accounts have null opening values and no register balance.
+- Balance calculation returns an explicit result because invalid entries and unsafe sums are expected failures. Working includes all register entries. Cleared includes postings strictly after opening through the cutoff. Uncleared includes only entries without a posted date.
+- Entry validation accepts a separate current local date for writes and rejects future activity. A historical report cutoff does not act as the current date. No future-entry or snapshot command is added.
+- Focused tests, `npm run lint`, and `npm run typecheck` passed. `npm run check` passed all document, tracked-path, boundary, format, lint, type, test, secret, and build checks: 16 test files and 175 tests. As in prior tasks, the runner needed broader local execution access for its temporary IPC socket. Review results follow separately.
+
+Independent specification and code quality reviews approved Task 4 with no material findings. The lead agent also ran the full check: 16 test files and 175 tests passed, with all checks and the build passing.
+
+Task 4 is complete. The task commit is `feat: define exact manual-account balances`. Task 5 remains open.

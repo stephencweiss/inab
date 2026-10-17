@@ -10,11 +10,11 @@ Prefer rules that fail automatically over instructions an agent must remember. E
 | --- | --- | --- | --- |
 | Conventions have matching indexes and valid local links | Document check | Active | First tooling change |
 | Application source uses TypeScript | Source-file check | Active | First application code |
-| Contracts are complete and inputs are parsed | Strict types and scoped interface lint rules with installed-config policy tests; parser tests remain planned | Active for the lint rules | First application code |
+| Contracts are complete and inputs are parsed | Strict types and scoped interface lint rules with installed-config policy tests; money and date parser tests | Active for these parsers and the lint rules | First application code |
 | Types and comments do not repeat code | Type inference, assertion, and JSDoc lint rules | Active | First application code |
 | Modules use permitted dependencies | Import boundary checks, including aliases | Active | First application code |
 | Private data and secrets stay out of source and CI | Tracked-path policy and secret scan; inspect publish scope | Active | First commit and every CI run |
-| Manual accounts and balances work without providers | Register, clearing, reconciliation, and opening-boundary tests | Planned | Slice 1 |
+| Manual accounts and balances work without providers | Pure balance and opening-boundary tests are active; register workflows and reconciliation tests remain planned | Partial | Slice 1 |
 | Imports preserve identity and commit atomically | Synthetic import fixtures and database integration tests | Planned | Slice 2 |
 | Migrations and restore preserve data | Temporary database upgrade and backup restore tests | Planned | First persisted data |
 | Budget money remains correct | Accounting examples and invariant tests | Planned | Slice 3 |

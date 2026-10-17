@@ -160,11 +160,11 @@ Before each task commit, run the listed focused checks plus `npm run lint` and `
 
 **Create:** `src/lib/money.ts`, `src/lib/date.ts`, `src/accounts/types.ts`, `src/accounts/balances.ts`, `tests/unit/money.test.ts`, `dates.test.ts`, `balances.test.ts`.
 
-- [ ] Write tests for `12.34 → 1234`, `-0.01 → -1`, zero opening balance, invalid fractions/exponents/NaN, overflow, invalid leap days, and date-only handling across time zones. Transactions reject zero amounts; snapshots and opening balances allow zero.
-- [ ] Write the synthetic balance example below. Include negative card debt and a positive card balance. Run `npm test -- tests/unit/money.test.ts tests/unit/dates.test.ts tests/unit/balances.test.ts`; expect missing functions or incorrect results.
-- [ ] Implement exact decimal parsing, date validation, checked addition, and pure balance functions. Types must carry account kind and USD; no database or IO imports.
-- [ ] Separate occurred and posted dates; pending old purchases count in working balance but not the cleared total until posted after opening. Reject clearing into the opening period.
-- [ ] Run focused tests, lint, and typecheck. Commit: `feat: define exact manual-account balances`.
+- [x] Write tests for `12.34 → 1234`, `-0.01 → -1`, zero opening balance, invalid fractions/exponents/NaN, overflow, invalid leap days, and date-only handling across time zones. Transactions reject zero amounts; snapshots and opening balances allow zero.
+- [x] Write the synthetic balance example below. Include negative card debt and a positive card balance. Run `npm test -- tests/unit/money.test.ts tests/unit/dates.test.ts tests/unit/balances.test.ts`; expect missing functions or incorrect results.
+- [x] Implement exact decimal parsing, date validation, checked addition, and pure balance functions. Types must carry account kind and USD; no database or IO imports.
+- [x] Separate occurred and posted dates; pending old purchases count in working balance but not the cleared total until posted after opening. Reject clearing into the opening period.
+- [x] Run focused tests, lint, and typecheck. Commit: `feat: define exact manual-account balances`.
 
 Example test contract (the fixture helper supplies complete fields):
 
