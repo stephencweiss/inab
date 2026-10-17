@@ -171,3 +171,22 @@ Scope: Cash/Credit bank reconciliation, original balance evidence, full evidence
 - Final lead-agent `npm run check` passed: 27 test files and 246 tests, plus document, tracked-path, boundary, formatting, lint, type, secret, and build checks. No external service or household data was used.
 
 Task 8 is complete. The task commit is `feat: reconcile cleared balances with bank records`. Task 9 remains open. The four accepted development-dependency audit findings remain unchanged.
+
+
+## October 17, 2026 — Task 9 implementation
+
+Scope: correction review for Cash/Credit reconciliations, affected-check previews, preserved original evidence, and transactional status audit records. No migration or Tracking snapshot behavior is added.
+
+- Red: the two new correction test files first failed all 13 tests because blanket guards blocked corrections and previews had no affected checks. They then passed with targeted invalidation. The old guard tests now use complete reconciliation fixtures and check review states or preserved metadata validity, because this task replaces the temporary refusal behavior. The map capture check first failed for a missing reconciliation capture field.
+- Corrections mark stored valid checks from the earliest old or new posting date onward. Opening amount or date changes mark all stored valid checks. Metadata-only, occurrence-only, pending, rename, and unchanged-opening controls preserve validity. Earlier unaffected checks stay valid. A later edit that restores old values does not heal old review records.
+- Commit rechecks the account revision and approved affected IDs/dates inside the immediate write transaction. This also rejects a new affected reconciliation confirmed after preview without an account revision change. Invalidation, status audit records, correction, account revision, and correction history commit or roll back together. Failure injection after invalidation preserves every original row. New reconciliation evidence confirms the corrected balance while old records stay marked for review.
+- Focused correction, adjacent, and map checks passed: nine files and 54 tests with `--maxWorkers=1`. Lint and types passed. An opening-date case expanded the correction tests to 14. All changed files passed formatting.
+- Two four-worker runs hit the existing five-second limit in the account invalid-input test (7,211 ms and 7,341 ms). That test passed alone in 3,833 ms. It put ten CLI failures and a list read in one timed test. The ten cases now run separately, each with a fresh temporary database and its own empty-list check. This preserves every case and strengthens the no-mutation check. The changed account test file passed all 16 tests in 13.56 seconds.
+- The lead's full run after that test separation still hit five-second limits in the existing first transaction workflow (5,031 ms) and first account workflow (6,039 ms). The other 267 tests passed across 29 files; the run took 26.47 seconds. The host showed a load of 16.50 on 12 reported cores. CLI and policy workers also start child processes, so four test workers still exceeded the available CPU capacity for these bounded workflows.
+- The config now uses at most one worker, matching the successful nine-file serial diagnosis. The five-second test limit, ten-second CLI process limit, and all test cases remain unchanged. The Task 8 record retains the historical four-worker result. The quality reviewer approved the scheduling change.
+- Independent specification and code quality reviews approved Task 9. The lead's real-terminal check showed the affected check ID/date before confirmation. Answering no preserved validity; answering yes marked the old check for review without changing its evidence. A new check was valid while the old check remained marked for review.
+
+- The terminal checks returned exit 0. A fresh process showed the old evidence at transaction revision 1 after correction to revision 2. A fresh list then showed both the old review record and the new valid record. The temporary synthetic database directory was removed.
+- Final lead-agent `npm run check` passed all document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 29 test files and 269 tests. The test phase took 57.37 seconds. No external service or household data was used.
+
+Task 9 is complete. The task commit is `feat: flag reconciliations affected by corrections`. Task 10 remains open. The four accepted development-dependency audit findings remain unchanged.

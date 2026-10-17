@@ -7,10 +7,11 @@ export type AccountFailure =
   | "account-unavailable"
   | "stale-version"
   | "posting-in-opening-period"
-  | "reconciled-opening"
   | "tracking-opening";
 export type AccountResult<T> = { ok: true; value: T } | { ok: false; reason: AccountFailure };
+export type AffectedReconciliation = { id: string; cutoffDate: string };
 export type AccountPreview = {
+  affectedReconciliations: AffectedReconciliation[];
   operationId: string;
   operation: "account.add" | "account.rename" | "account.opening";
   before: StoredAccount | null;
@@ -20,7 +21,7 @@ export type AccountPreview = {
 export type AccountSession = {
   get: (id: string) => StoredAccount | null;
   entries: (id: string) => RegisterEntry[];
-  hasReconciliations: (id: string) => boolean;
+  reconciliations: (id: string) => Reconciliation[];
   save: (preview: AccountPreview) => void;
 };
 export type AccountStore = {
@@ -50,11 +51,11 @@ export type TransactionFailure =
   | "unsafe-cents"
   | "posting-in-opening-period"
   | "posting-before-occurrence"
-  | "future-date"
-  | "reconciled-transaction";
+  | "future-date";
 export type TransactionResult<T> =
   { ok: true; value: T } | { ok: false; reason: TransactionFailure };
 export type TransactionPreview = {
+  affectedReconciliations: AffectedReconciliation[];
   operationId: string;
   operation: "transaction.add" | "transaction.edit" | "transaction.clear" | "transaction.unclear";
   account: StoredAccount;
@@ -67,7 +68,6 @@ export type TransactionSession = {
   account: (id: string) => StoredAccount | null;
   get: (id: string) => ManualTransaction | null;
   entries: (id: string) => ManualTransaction[];
-  hasReconciliations: (id: string) => boolean;
   save: (preview: TransactionPreview) => void;
 };
 export type TransactionStore = {

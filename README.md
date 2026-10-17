@@ -38,7 +38,7 @@ Use the returned account ID and current revision for edits. Duplicate names rema
 
 In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `cancel`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
 
-Opening corrections reject posted entries inside the new opening period. Corrections also stop when reconciliation evidence exists; its review workflow comes later. Snapshot commands remain planned. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
+Opening corrections reject posted entries inside the new opening period. An opening amount or date correction marks all valid reconciliations `needs-review`. The preview lists affected IDs and cutoff dates. Confirmation saves the correction, review states, and audit records together. Snapshot commands remain planned. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
 
 ## Conventions
 
@@ -67,7 +67,7 @@ Use returned transaction IDs and revisions. Identical purchases remain separate.
 
 An old pending purchase can occur before opening. Its posting date must be after opening and on or after occurrence. Future activity is refused because scheduled entries are deferred. Tracking registers and transaction writes are not supported in Slice 1. Register output shows signed working, cleared, and uncleared amounts. It reads account values and entries from one database snapshot.
 
-Until the reconciliation correction workflow is added, posting or amount changes to cleared activity stop if reconciliation evidence exists. Payee and memo corrections remain available and preserve that evidence. Failed writes report the operation ID; inspect the result before retrying.
+Amount or posting corrections mark affected reconciliations `needs-review` from the earliest old or new posting date onward. Backdated cleared additions and unclearing use the same rule. Earlier checks stay valid. Pending, payee, memo, and occurrence-only corrections preserve valid checks. The preview lists affected check IDs and dates before confirmation. Failed writes report the operation ID; inspect the result before retrying.
 
 ## Reconcile a bank balance
 
@@ -78,4 +78,4 @@ npm run inab -- --db /absolute/private/path/plan.sqlite reconciliation list --ac
 
 Compare the bank's posted closing balance at the cutoff with the cleared register balance. Pending entries stay uncleared. Credit debt is negative. A mismatch reports the difference, exits with code 4, and saves no reconciliation or adjustment. A match shows a preview and requires confirmation. Scripts require a cutoff, bank balance, and `--confirm` for a match. Terminal prompts show the local date default; an explicit date overrides it.
 
-Confirmation rechecks the account revision and current balance, then saves the reconciliation, original entry evidence, and audit record together. Repeat confirmation at the same cutoff and account revision returns the existing record with `reused: true` and no new operation ID. Lists show the full opening and entry evidence. Registers show `reconciled` only when that evidence still matches current balance values. Payee and memo edits keep coverage and preserve the original evidence revision. Changes to reconciled amounts, posting dates, and opening balances remain blocked until the review workflow is added.
+Confirmation rechecks the account revision and current balance, then saves the reconciliation, original entry evidence, and audit record together. Repeat confirmation at the same cutoff and account revision returns the existing record with `reused: true` and no new operation ID. Lists show the full opening and entry evidence. Registers show `reconciled` only when that evidence still matches current balance values. Payee and memo edits keep coverage and preserve the original evidence revision. Corrections preserve original evidence and mark affected checks `needs-review`. Confirmation rechecks both the account revision and the affected check list. A new check can confirm the corrected balance; old review records keep their original evidence and review state.

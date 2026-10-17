@@ -1,3 +1,5 @@
+import { createReconciliations } from "../../src/application/reconcile.js";
+import { createReconciliationStore } from "../../src/storage/reconciliations.js";
 import { afterEach, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { initializeDatabase, openDatabase } from "../../src/storage/database.js";
@@ -227,33 +229,30 @@ it("requires the latest schema before normal account operations", async () => {
   }
   expect(() => app.list()).toThrow("Database schema is out of date");
 });
-it("protects existing reconciliation evidence until its correction workflow is implemented", async () => {
+it("preserves original reconciliation evidence when an opening correction needs review", async () => {
   const { app, path } = await setup();
   const preview = app.previewAdd(cash);
   if (!preview.ok) throw new Error("Expected preview");
   app.commit(preview.value);
-  const connection = openDatabase(path);
-  try {
-    connection.sqlite
-      .prepare("INSERT INTO reconciliations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(
-        "synthetic-check",
-        preview.value.after.id,
-        "2026-10-16",
-        12345,
-        12345,
-        12345,
-        "2026-10-16",
-        1,
-        "valid",
-        "2026-10-17T12:00:00.000Z",
-      );
-  } finally {
-    connection.sqlite.close();
-  }
-  expect(app.previewOpening(preview.value.after.id, 1, 0, "2026-10-15")).toEqual({
-    ok: false,
-    reason: "reconciled-opening",
+  const checks = createReconciliations(createReconciliationStore(path), {
+    id: () => crypto.randomUUID(),
+    now: () => "2026-10-17T12:00:00.000Z",
+    today: () => "2026-10-17",
+  });
+  const check = checks.preview(preview.value.after.id, "2026-10-16", 12345);
+  if (!check.ok) throw new Error("Expected reconciliation");
+  checks.commit(check.value);
+  const correction = app.previewOpening(preview.value.after.id, 1, 0, "2026-10-15");
+  if (!correction.ok) throw new Error("Expected correction");
+  expect(correction.value.affectedReconciliations).toEqual([
+    { id: check.value.operationId, cutoffDate: "2026-10-16" },
+  ]);
+  expect(app.commit(correction.value).ok).toBe(true);
+  expect(checks.list(preview.value.after.id)).toMatchObject({
+    ok: true,
+    value: [
+      { status: "needs-review", openingCents: 12345, openingDate: "2026-10-16", entries: [] },
+    ],
   });
 });
 it("rechecks immutable account fields and validated values before committing a preview", async () => {

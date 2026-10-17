@@ -97,3 +97,30 @@ export function evidenceMatches(
     )
   );
 }
+
+export type ReconciliationReference = { id: string; cutoffDate: string };
+type ReviewableReconciliation = ReconciliationReference & { status: "valid" | "needs-review" };
+/** A null boundary selects every stored valid check, for an opening correction. */
+export function affectedReconciliations(
+  records: readonly ReviewableReconciliation[],
+  earliestPosting: string | null,
+): ReconciliationReference[] {
+  return records
+    .filter(
+      (record) =>
+        record.status === "valid" &&
+        (earliestPosting === null || record.cutoffDate >= earliestPosting),
+    )
+    .map(({ id, cutoffDate }) => ({ id, cutoffDate }))
+    .toSorted((a, b) => a.cutoffDate.localeCompare(b.cutoffDate) || a.id.localeCompare(b.id));
+}
+/** A null result means no posted balance changed; do not invalidate any check. */
+export function correctionPostingDate(
+  before: RegisterEntry | null,
+  after: RegisterEntry,
+): string | null {
+  if (before !== null && before.postedOn === after.postedOn && before.cents === after.cents)
+    return null;
+  const dates = [before?.postedOn ?? null, after.postedOn].filter((date) => date !== null);
+  return dates.toSorted((a, b) => a.localeCompare(b))[0] ?? null;
+}

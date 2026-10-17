@@ -1,3 +1,5 @@
+import { createReconciliations } from "../../src/application/reconcile.js";
+import { createReconciliationStore } from "../../src/storage/reconciliations.js";
 import { afterEach, expect, it } from "vitest";
 import { createAccounts } from "../../src/application/accounts.js";
 import { createTransactions } from "../../src/application/transactions.js";
@@ -197,38 +199,26 @@ it("rejects overflow in cleared and uncleared totals even if the working total i
     connection.sqlite.close();
   }
 });
-it("protects reconciliation evidence while allowing metadata edits and pending changes", async () => {
+it("keeps metadata valid and previews review for balance corrections", async () => {
   const { app, id, path } = await setup();
   const added = app.previewAdd(id, { ...entry, postedOn: "2026-10-17" });
   if (!added.ok) throw new Error("Expected posted");
   app.commit(added.value);
-  const connection = openDatabase(path);
-  try {
-    connection.sqlite
-      .prepare("INSERT INTO reconciliations VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(
-        "check",
-        id,
-        "2026-10-17",
-        94000,
-        94000,
-        100000,
-        "2026-10-16",
-        2,
-        "valid",
-        runtime.now(),
-      );
-  } finally {
-    connection.sqlite.close();
+  const checks = createReconciliations(createReconciliationStore(path), runtime);
+  const check = checks.preview(id, "2026-10-17", 94000);
+  if (!check.ok) throw new Error("Expected reconciliation");
+  checks.commit(check.value);
+  for (const correction of [
+    app.previewUnclear(added.value.after.id, 1),
+    app.previewEdit(added.value.after.id, 1, { ...entry, cents: -1 }),
+  ]) {
+    expect(correction).toMatchObject({
+      ok: true,
+      value: {
+        affectedReconciliations: [{ id: check.value.operationId, cutoffDate: "2026-10-17" }],
+      },
+    });
   }
-  expect(app.previewUnclear(added.value.after.id, 1)).toEqual({
-    ok: false,
-    reason: "reconciled-transaction",
-  });
-  expect(app.previewEdit(added.value.after.id, 1, { ...entry, cents: -1 })).toEqual({
-    ok: false,
-    reason: "reconciled-transaction",
-  });
   const metadata = app.previewEdit(added.value.after.id, 1, {
     ...entry,
     memo: "Details",
@@ -236,7 +226,14 @@ it("protects reconciliation evidence while allowing metadata edits and pending c
   });
   if (!metadata.ok) throw new Error("Expected metadata edit");
   expect(app.commit(metadata.value).ok).toBe(true);
-  expect(app.previewAdd(id, entry).ok).toBe(true);
+  expect(checks.list(id)).toMatchObject({
+    ok: true,
+    value: [{ status: "valid", entries: [{ transactionRevision: 1 }] }],
+  });
+  expect(app.previewAdd(id, entry)).toMatchObject({
+    ok: true,
+    value: { affectedReconciliations: [] },
+  });
 });
 it("uses one read snapshot and sorts injected timestamp ties by ID", async () => {
   const { id, path } = await setup();

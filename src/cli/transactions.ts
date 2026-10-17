@@ -9,7 +9,7 @@ import { parseMoney } from "../lib/money.js";
 import type { TerminalCommand } from "./parse.js";
 import { confirmWrite, InvalidInput } from "./prompts.js";
 import type { TerminalPrompts } from "./prompts.js";
-import { formatCents, renderInspection } from "./render.js";
+import { formatCents, renderInspection, renderAffected } from "./render.js";
 function unwrap<T>(result: TransactionResult<T>) {
   if (result.ok) return result.value;
   const reason = result.reason;
@@ -21,8 +21,6 @@ function unwrap<T>(result: TransactionResult<T>) {
     "future-date": "future-date: Scheduled activity is not supported in Slice 1.",
     "tracking-register":
       "tracking-register: Tracking transactions and registers are not supported in Slice 1.",
-    "reconciled-transaction":
-      "reconciled-transaction: Posting or amount changes with reconciliation evidence require the later review workflow.",
   };
   throw new InvalidInput(messages[reason] ?? reason);
 }
@@ -65,7 +63,7 @@ export async function executeTransaction(command: TerminalCommand, prompts: Term
   const preview = previewFor(command, app);
   if (!command.json || !command.confirm)
     process.stderr.write(
-      `Database target: ${resolve(command.database)}\nAccount ID: ${preview.account.id} | revision ${preview.account.revision}\nOperation ID: ${preview.operationId}\nBefore: ${preview.before === null ? "none" : render(preview.before)}\nAfter: ${render(preview.after)}\n`,
+      `Database target: ${resolve(command.database)}\nAccount ID: ${preview.account.id} | revision ${preview.account.revision}\nOperation ID: ${preview.operationId}\nBefore: ${preview.before === null ? "none" : render(preview.before)}\nAfter: ${render(preview.after)}\n${renderAffected(preview.affectedReconciliations)}`,
     );
   if (!(await confirmWrite(command, prompts))) {
     output(

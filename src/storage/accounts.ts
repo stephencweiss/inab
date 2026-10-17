@@ -1,3 +1,4 @@
+import { readReconciliations, invalidateReconciliations } from "./reconciliations.js";
 import { orderRegisterEntries } from "../accounts/register.js";
 import { eq } from "drizzle-orm";
 import type { AccountPreview, AccountSession, AccountStore } from "../application/ports.js";
@@ -6,7 +7,6 @@ import { migrationsFolder, validateMigrationHistory } from "./migration-history.
 import { parseAccountRow, parseManualTransactionRow } from "./rows.js";
 import { accounts } from "./schema/accounts.js";
 import { changes } from "./schema/changes.js";
-import { reconciliations } from "./schema/reconciliations.js";
 import { transactions } from "./schema/transactions.js";
 
 type Connection = ReturnType<typeof openDatabase>;
@@ -26,16 +26,12 @@ function sessionFor(db: Queries): AccountSession {
           .all()
           .map(parseManualTransactionRow),
       ),
-    hasReconciliations: (id) =>
-      db
-        .select({ id: reconciliations.id })
-        .from(reconciliations)
-        .where(eq(reconciliations.accountId, id))
-        .get() !== undefined,
+    reconciliations: (id) => readReconciliations(db, id),
     save: (value) => save(db, value),
   };
 }
 function save(db: Queries, value: AccountPreview) {
+  invalidateReconciliations(db, value.affectedReconciliations, value.operationId, value.recordedAt);
   if (value.before === null) db.insert(accounts).values(value.after).run();
   else db.update(accounts).set(value.after).where(eq(accounts.id, value.after.id)).run();
   db.insert(changes)

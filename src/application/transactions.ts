@@ -1,10 +1,15 @@
-import { evidenceMatches } from "../accounts/reconciliation.js";
+import {
+  evidenceMatches,
+  affectedReconciliations,
+  correctionPostingDate,
+} from "../accounts/reconciliation.js";
 import { orderRegisterEntries } from "../accounts/register.js";
 import { balances, validateRegisterEntry } from "../accounts/balances.js";
 import type { AccountBalances } from "../accounts/balances.js";
 import { parseDate } from "../lib/date.js";
 import { validateCents } from "../lib/money.js";
 import type {
+  AffectedReconciliation,
   AccountRuntime,
   ManualTransaction,
   StoredAccount,
@@ -42,16 +47,20 @@ export function parseTransactionInput(input: unknown): TransactionResult<Transac
     },
   };
 }
-function affectsReconciliation(before: ManualTransaction | null, after: ManualTransaction) {
-  return (
-    (before?.postedOn !== after.postedOn || before?.cents !== after.cents) &&
-    (before?.postedOn != null || after.postedOn !== null)
-  );
+function transactionAffected(
+  session: TransactionSession,
+  accountId: string,
+  before: ManualTransaction | null,
+  after: ManualTransaction,
+) {
+  const earliest = correctionPostingDate(before, after);
+  return earliest === null
+    ? []
+    : affectedReconciliations(session.reconciliations(accountId), earliest);
 }
 function validateChange(
   session: TransactionSession,
   account: StoredAccount,
-  before: ManualTransaction | null,
   after: ManualTransaction,
   today: string,
 ): TransactionResult<ManualTransaction> {
@@ -74,8 +83,6 @@ function validateChange(
       return { ok: false, reason: valid.reason };
     return { ok: false, reason: "invalid-transaction" };
   }
-  if (affectsReconciliation(before, after) && session.hasReconciliations(account.id))
-    return { ok: false, reason: "reconciled-transaction" };
   const entries = orderRegisterEntries([
     ...session.entries(account.id).filter((e) => e.id !== after.id),
     after,
@@ -121,11 +128,12 @@ export function createTransactions(store: TransactionStore, runtime: AccountRunt
     before: ManualTransaction | null,
     after: ManualTransaction,
   ): TransactionResult<TransactionPreview> {
-    const result = validateChange(session, account, before, after, runtime.today());
+    const result = validateChange(session, account, after, runtime.today());
     if (!result.ok) return result;
     return {
       ok: true,
       value: {
+        affectedReconciliations: transactionAffected(session, account.id, before, after),
         operationId: runtime.id(),
         operation,
         account,
@@ -198,6 +206,7 @@ export function createTransactions(store: TransactionStore, runtime: AccountRunt
     operationId: string;
     transaction: ManualTransaction;
     accountRevision: number;
+    affectedReconciliations: AffectedReconciliation[];
   }> {
     try {
       return store.write((session) => {
@@ -211,12 +220,16 @@ export function createTransactions(store: TransactionStore, runtime: AccountRunt
           return { ok: false, reason: "stale-version" };
         if (value.account.id !== account.id || !validPreview(value, current))
           return { ok: false, reason: "invalid-transaction" };
-        const valid = validateChange(session, account, current, value.after, runtime.today());
+        const valid = validateChange(session, account, value.after, runtime.today());
         if (!valid.ok) return valid;
+        const affected = transactionAffected(session, account.id, current, value.after);
+        if (JSON.stringify(affected) !== JSON.stringify(value.affectedReconciliations))
+          return { ok: false, reason: "stale-version" };
         session.save(value);
         return {
           ok: true,
           value: {
+            affectedReconciliations: value.affectedReconciliations,
             operationId: value.operationId,
             transaction: value.after,
             accountRevision: account.revision + 1,

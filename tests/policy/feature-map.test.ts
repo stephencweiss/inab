@@ -41,6 +41,7 @@ function parseStep(value: unknown) {
     exitStatus: value.exitStatus,
     captureAccount: value.captureAccount,
     captureTransaction: value.captureTransaction === true,
+    captureReconciliation: value.captureReconciliation === true,
     stdoutContains: parseStrings(value.stdoutContains),
     stderrContains: parseStrings(value.stderrContains),
   };
@@ -107,6 +108,34 @@ function parseCapturedTransaction(output: string) {
     throw new Error("Cannot capture transaction ID/revision");
   return { id: parsed.transaction.id, revision: parsed.transaction.revision };
 }
+function parseCapturedReconciliation(output: string) {
+  const parsed: unknown = JSON.parse(output);
+  if (
+    !isRecord(parsed) ||
+    !isRecord(parsed.reconciliation) ||
+    typeof parsed.reconciliation.id !== "string"
+  )
+    throw new Error("Cannot capture reconciliation ID");
+  return parsed.reconciliation.id;
+}
+function captureVariables(
+  step: ReturnType<typeof parseStep>,
+  stdout: string,
+  variables: Map<string, string>,
+) {
+  if (step.captureReconciliation)
+    variables.set("reconciliationId", parseCapturedReconciliation(stdout));
+  if (step.captureTransaction) {
+    const captured = parseCapturedTransaction(stdout);
+    variables.set("transactionId", captured.id);
+    variables.set("transactionRevision", String(captured.revision));
+  }
+  if (step.captureAccount) {
+    const captured = parseCapturedAccount(stdout);
+    variables.set("accountId", captured.id);
+    variables.set("revision", String(captured.revision));
+  }
+}
 it("validates the hand-authored account map and executes its exact terminal commands", () => {
   const workflows = parseMap(
     JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.json"), "utf8")),
@@ -116,7 +145,7 @@ it("validates the hand-authored account map and executes its exact terminal comm
     const variables = new Map([["database", fixture.path]]);
     const substitute = (text: string) =>
       text.replace(
-        /\$\{(database|accountId|revision|transactionId|transactionRevision)\}/g,
+        /\$\{(database|accountId|revision|transactionId|transactionRevision|reconciliationId)\}/g,
         (_, key: string) => {
           const value = variables.get(key);
           if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
@@ -133,16 +162,7 @@ it("validates the hand-authored account map and executes its exact terminal comm
           expect(result.stdout).toContain(substitute(signal));
         for (const signal of step.stderrContains)
           expect(result.stderr).toContain(substitute(signal));
-        if (step.captureTransaction) {
-          const captured = parseCapturedTransaction(result.stdout);
-          variables.set("transactionId", captured.id);
-          variables.set("transactionRevision", String(captured.revision));
-        }
-        if (step.captureAccount) {
-          const captured = parseCapturedAccount(result.stdout);
-          variables.set("accountId", captured.id);
-          variables.set("revision", String(captured.revision));
-        }
+        captureVariables(step, result.stdout, variables);
       }
     } finally {
       fixture.cleanup();
@@ -167,6 +187,9 @@ it("rejects bad structure, duplicate workflow IDs, and broken source references"
       },
     ],
   };
+  expect(parseStep({ ...valid.steps[0], captureReconciliation: true })).toMatchObject({
+    captureReconciliation: true,
+  });
   expect(parseMap({ version: 1, workflows: [valid] })).toHaveLength(1);
   expect(() => parseMap({ version: 1, workflows: [valid, valid] })).toThrow("Duplicate");
   expect(() =>

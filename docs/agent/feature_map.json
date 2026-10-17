@@ -428,12 +428,13 @@
     },
     {
       "id": "terminal.reconciliation.compare",
-      "name": "Compare posted bank balances and preserve reconciliation evidence",
+      "name": "Compare bank balances and review affected checks after corrections",
       "prerequisites": [
         "Use a new temporary database and the synthetic running example only.",
         "Capture accountId from account JSON and transactionId/transactionRevision from the posted purchase JSON.",
         "Use explicit dates and confirmation flags. Mismatch writes no reconciliation or adjustment.",
-        "Metadata-only correction keeps coverage; the original evidence revision stays 1."
+        "Metadata-only correction keeps coverage; the original evidence revision stays 1.",
+        "Balance corrections mark affected checks needs-review; original evidence stays unchanged. A new check confirms corrected values."
       ],
       "sourceFiles": [
         "src/cli/reconciliation.ts",
@@ -442,7 +443,11 @@
         "src/application/reconcile.ts",
         "src/accounts/reconciliation.ts",
         "src/storage/reconciliations.ts",
-        "src/application/transactions.ts"
+        "src/application/transactions.ts",
+        "src/application/accounts.ts",
+        "src/storage/accounts.ts",
+        "src/storage/transactions.ts",
+        "src/cli/render.ts"
       ],
       "steps": [
         {
@@ -610,7 +615,8 @@
             "\"accountRevision\":3",
             "\"transactionRevision\":1"
           ],
-          "stderrContains": []
+          "stderrContains": [],
+          "captureReconciliation": true
         },
         {
           "command": "node --import tsx src/cli/main.ts",
@@ -657,7 +663,7 @@
           "promptAnswers": [],
           "exitStatus": 0,
           "captureAccount": false,
-          "captureTransaction": false,
+          "captureTransaction": true,
           "stdoutContains": ["\"revision\":2"],
           "stderrContains": []
         },
@@ -717,6 +723,195 @@
           "captureTransaction": false,
           "stdoutContains": [],
           "stderrContains": ["account-unavailable"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "edit",
+            "${transactionId}",
+            "--date",
+            "2026-10-17",
+            "--amount",
+            "-26",
+            "--payee",
+            "Synthetic corrected amount",
+            "--memo",
+            "Receipt note",
+            "--expected-version",
+            "${transactionRevision}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 2,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [],
+          "stderrContains": ["Write requires --confirm in noninteractive mode"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "edit",
+            "${transactionId}",
+            "--date",
+            "2026-10-17",
+            "--amount",
+            "-26",
+            "--payee",
+            "Synthetic corrected amount",
+            "--memo",
+            "Receipt note",
+            "--expected-version",
+            "${transactionRevision}",
+            "--json",
+            "--confirm"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [
+            "\"affectedReconciliations\":[{\"id\":\"${reconciliationId}\",\"cutoffDate\":\"2026-10-17\"}]",
+            "\"cents\":-2600"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "reconciliation",
+            "list",
+            "--account",
+            "${accountId}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [
+            "\"status\":\"needs-review\"",
+            "\"cents\":-2500",
+            "\"transactionRevision\":1"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "register", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": ["\"clearance\":\"cleared\"", "\"clearedCents\":97400"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "reconcile",
+            "${accountId}",
+            "--as-of",
+            "2026-10-17",
+            "--bank-balance",
+            "974",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": ["\"status\":\"valid\"", "\"cents\":-2600"],
+          "stderrContains": [],
+          "captureReconciliation": true
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "reconciliation",
+            "list",
+            "--account",
+            "${accountId}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [
+            "\"status\":\"needs-review\"",
+            "\"status\":\"valid\"",
+            "\"cents\":-2500"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "show", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "captureTransaction": false,
+          "stdoutContains": ["\"clearedCents\":97400"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "opening",
+            "${accountId}",
+            "--amount",
+            "1001",
+            "--as-of",
+            "2026-10-16",
+            "--expected-version",
+            "${revision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": [
+            "\"affectedReconciliations\":[{\"id\":\"${reconciliationId}\"",
+            "\"openingCents\":100100"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "reconciliation",
+            "list",
+            "--account",
+            "${accountId}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": false,
+          "stdoutContains": ["\"status\":\"needs-review\"", "\"openingCents\":100000"],
+          "stderrContains": []
         }
       ]
     }

@@ -14,7 +14,7 @@
 
 Read the [design](../specs/2026-10-17-inab-design.md), [manual-account decision](../../decisions/2026-10-17-manual-account-defaults.md), [conventions](../../../README.md), and [verification guide](../../verification.md). Those documents own product decisions. This plan supplies implementation choices and test cases; choices marked proposed are recommendations for this slice, not prior user decisions.
 
-The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit reconciliation and original balance evidence are implemented. Correction invalidation, snapshots, and user recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
+The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit reconciliation and original balance evidence are implemented. Correction invalidation now preserves evidence and marks affected checks for review. Snapshots and user recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
 
 All paths below are relative to `/Users/sweiss/code/inab`. Use the current checkout unless execution needs isolation. Never read real YNAB exports for these tests. Use generated synthetic records and temporary database directories. Do not commit or publish private data. No remote creation, push, paid service, or deployment is part of this plan.
 
@@ -238,12 +238,12 @@ it("keeps pending purchases outside the cleared balance", () => {
 **Modify:** account/transaction operations and repositories, reconciliation module, feature map.
 **Create:** `tests/integration/reconciliation-corrections.test.ts`, `tests/cli/reconciliation-corrections.test.ts`.
 
-- [ ] Write cases for changing amount, moving posting date across a cutoff, unclearing an entry, adding a backdated cleared entry, and changing opening balance. Each must mark all affected later checks `needs review`, preserving their evidence.
-- [ ] Add control cases: a payee/memo change preserves validity; an entry after a cutoff does not invalidate that cutoff; earlier unaffected checks remain valid. Run `npm test -- tests/integration/reconciliation-corrections.test.ts tests/cli/reconciliation-corrections.test.ts`; expect red.
-- [ ] Implement invalidation in the same write transaction as the correction. Show affected reconciliation IDs/dates in the preview and require confirmation. Recheck account revision before applying. Audit before/after values.
-- [ ] Add failure injection after invalidation but before mutation/history completes; all changes must roll back. Add a two-connection stale-update case.
-- [ ] Reconcile the corrected balance. Expect a new valid record, while old records remain marked for review. Run focused checks and feature map.
-- [ ] Commit: `feat: flag reconciliations affected by corrections`.
+- [x] Write cases for changing amount, moving posting date across a cutoff, unclearing an entry, adding a backdated cleared entry, and changing opening balance. Each must mark all affected later checks `needs review`, preserving their evidence.
+- [x] Add control cases: a payee/memo change preserves validity; an entry after a cutoff does not invalidate that cutoff; earlier unaffected checks remain valid. Run `npm test -- tests/integration/reconciliation-corrections.test.ts tests/cli/reconciliation-corrections.test.ts`; expect red.
+- [x] Implement invalidation in the same write transaction as the correction. Show affected reconciliation IDs/dates in the preview and require confirmation. Recheck account revision before applying. Audit before/after values.
+- [x] Add failure injection after invalidation but before mutation/history completes; all changes must roll back. Add a two-connection stale-update case.
+- [x] Reconcile the corrected balance. Expect a new valid record, while old records remain marked for review. Run focused checks and feature map.
+- [x] Commit: `feat: flag reconciliations affected by corrections`.
 
 ### Task 10 — Record Tracking balance snapshots
 

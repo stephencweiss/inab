@@ -100,9 +100,8 @@ it("Tracking has no opening pair or recorded balance", async () => {
     run(["add", "--name", "Invalid", "--kind", "tracking", "--opening", "0", "--confirm"]).status,
   ).toBe(2);
 });
-it("rejects invalid input without mutation and never waits for noninteractive prompts", async () => {
-  const { run } = await setup();
-  for (const args of [
+it.each(
+  [
     ["add"],
     ["add", "--name", "x", "--kind", "cash", "--opening", "0", "--as-of", "bad", "--confirm"],
     [
@@ -124,8 +123,10 @@ it("rejects invalid input without mutation and never waits for noninteractive pr
     ["rename", "missing", "--name", "x", "--confirm"],
     ["add", "--name", "x", "--name", "y"],
     ["add", "--name", "x", "--kind", "cash", "--opening", "0"],
-  ])
-    expect(run(args).status, JSON.stringify(args)).toBe(2);
+  ].map((args) => ({ args })),
+)("rejects invalid input without mutation or prompt waits: $args", async ({ args }) => {
+  const { run } = await setup();
+  expect(run(args).status, JSON.stringify(args)).toBe(2);
   expect(JSON.parse(run(["list", "--json"]).stdout).accounts).toEqual([]);
 });
 it("human previews show target and exact signed opening values", async () => {

@@ -1,9 +1,11 @@
+import { affectedReconciliations } from "../accounts/reconciliation.js";
 import { balances } from "../accounts/balances.js";
 import type { AccountBalances } from "../accounts/balances.js";
 import type { NewAccount } from "../accounts/types.js";
 import { parseDate } from "../lib/date.js";
 import { validateCents } from "../lib/money.js";
 import type {
+  AffectedReconciliation,
   AccountPreview,
   AccountResult,
   AccountRuntime,
@@ -52,7 +54,6 @@ function validateOpening(
   after: StoredAccount,
 ): AccountResult<StoredAccount> {
   if (after.kind === "tracking") return { ok: false, reason: "tracking-opening" };
-  if (session.hasReconciliations(after.id)) return { ok: false, reason: "reconciled-opening" };
   const entries = session.entries(after.id);
   if (entries.some((entry) => entry.postedOn !== null && entry.postedOn <= after.openingDate))
     return { ok: false, reason: "posting-in-opening-period" };
@@ -67,6 +68,11 @@ function validateOpening(
       reason: computed.reason === "unsafe-cents" ? "unsafe-cents" : "invalid-account",
     };
   return { ok: true, value: after };
+}
+function openingAffected(session: AccountSession, before: StoredAccount, after: StoredAccount) {
+  return before.openingCents === after.openingCents && before.openingDate === after.openingDate
+    ? []
+    : affectedReconciliations(session.reconciliations(after.id), null);
 }
 function existing(
   session: AccountSession,
@@ -98,22 +104,53 @@ function validateEdit(value: AccountPreview, current: StoredAccount) {
   return value.operation === "account.opening" && after.name === current.name;
 }
 
+function validNewPreview(value: AccountPreview) {
+  return (
+    value.operation === "account.add" &&
+    value.after.revision === 1 &&
+    parseNewAccount(value.after).ok
+  );
+}
+function validateAccountPreview(
+  session: AccountSession,
+  value: AccountPreview,
+): AccountResult<StoredAccount> {
+  if (value.before === null) {
+    if (!validNewPreview(value)) return { ok: false, reason: "invalid-account" };
+    if (session.get(value.after.id) !== null) return { ok: false, reason: "stale-version" };
+    return { ok: true, value: value.after };
+  }
+  const current = existing(session, value.before.id, value.before.revision);
+  if (!current.ok) return current;
+  if (!validateEdit(value, current.value)) return { ok: false, reason: "invalid-account" };
+  return value.operation === "account.opening"
+    ? validateOpening(session, value.after)
+    : { ok: true, value: value.after };
+}
 export function createAccounts(store: AccountStore, runtime: AccountRuntime) {
   function preview(
     operation: AccountPreview["operation"],
     before: StoredAccount | null,
     after: StoredAccount,
+    affected: AffectedReconciliation[],
   ): AccountResult<AccountPreview> {
     return {
       ok: true,
-      value: { operationId: runtime.id(), operation, before, after, recordedAt: runtime.now() },
+      value: {
+        operationId: runtime.id(),
+        operation,
+        before,
+        after,
+        recordedAt: runtime.now(),
+        affectedReconciliations: affected,
+      },
     };
   }
   function previewAdd(input: NewAccount): AccountResult<AccountPreview> {
     const parsed = parseNewAccount(input);
     if (!parsed.ok) return parsed;
     const account = { ...parsed.value, id: runtime.id(), revision: 1, createdAt: runtime.now() };
-    return preview("account.add", null, account);
+    return preview("account.add", null, account, []);
   }
   function previewRename(
     id: string,
@@ -126,11 +163,16 @@ export function createAccounts(store: AccountStore, runtime: AccountRuntime) {
       const result = existing(session, id, revision);
       if (!result.ok) return result;
       if (!Number.isSafeInteger(revision + 1)) return { ok: false, reason: "invalid-account" };
-      return preview("account.rename", result.value, {
-        ...result.value,
-        name: name.trim(),
-        revision: revision + 1,
-      });
+      return preview(
+        "account.rename",
+        result.value,
+        {
+          ...result.value,
+          name: name.trim(),
+          revision: revision + 1,
+        },
+        [],
+      );
     });
   }
   function previewOpening(
@@ -154,33 +196,36 @@ export function createAccounts(store: AccountStore, runtime: AccountRuntime) {
       const after = { ...result.value, openingCents, openingDate, revision: revision + 1 };
       const valid = validateOpening(session, after);
       if (!valid.ok) return valid;
-      return preview("account.opening", result.value, after);
+      return preview(
+        "account.opening",
+        result.value,
+        after,
+        openingAffected(session, result.value, after),
+      );
     });
   }
-  function commit(
-    value: AccountPreview,
-  ): AccountResult<{ operationId: string; account: StoredAccount }> {
+  function commit(value: AccountPreview): AccountResult<{
+    operationId: string;
+    account: StoredAccount;
+    affectedReconciliations: AffectedReconciliation[];
+  }> {
     try {
       return store.write((session) => {
-        if (value.before !== null) {
-          const current = existing(session, value.before.id, value.before.revision);
-          if (!current.ok) return current;
-          if (!validateEdit(value, current.value)) return { ok: false, reason: "invalid-account" };
-          if (value.operation === "account.opening") {
-            const valid = validateOpening(session, value.after);
-            if (!valid.ok) return valid;
-          }
-        } else {
-          if (
-            value.operation !== "account.add" ||
-            value.after.revision !== 1 ||
-            !parseNewAccount(value.after).ok
-          )
-            return { ok: false, reason: "invalid-account" };
-          if (session.get(value.after.id) !== null) return { ok: false, reason: "stale-version" };
-        }
+        const valid = validateAccountPreview(session, value);
+        if (!valid.ok) return valid;
+        const affected =
+          value.before === null ? [] : openingAffected(session, value.before, value.after);
+        if (JSON.stringify(affected) !== JSON.stringify(value.affectedReconciliations))
+          return { ok: false, reason: "stale-version" };
         session.save(value);
-        return { ok: true, value: { operationId: value.operationId, account: value.after } };
+        return {
+          ok: true,
+          value: {
+            operationId: value.operationId,
+            account: value.after,
+            affectedReconciliations: value.affectedReconciliations,
+          },
+        };
       });
     } catch (error) {
       throw new Error(

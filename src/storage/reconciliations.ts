@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import type {
+  AffectedReconciliation,
   Reconciliation,
   ReconciliationPreview,
   ReconciliationSession,
@@ -141,4 +142,29 @@ export function createReconciliationStore(path: string): ReconciliationStore {
     }
   }
   return { read: (work) => run(work, false), write: (work) => run(work, true) };
+}
+
+/** Call only within the correction's immediate write transaction, before its mutation. */
+export function invalidateReconciliations(
+  db: Queries,
+  affected: readonly AffectedReconciliation[],
+  operationId: string,
+  recordedAt: string,
+) {
+  for (const record of affected) {
+    db.update(reconciliations)
+      .set({ status: "needs-review" })
+      .where(eq(reconciliations.id, record.id))
+      .run();
+    db.insert(changes)
+      .values({
+        id: `${operationId}:reconciliation:${record.id}`,
+        operation: "reconciliation.invalidate",
+        entityId: record.id,
+        beforeJson: JSON.stringify({ ...record, status: "valid" }),
+        afterJson: JSON.stringify({ ...record, status: "needs-review" }),
+        recordedAt,
+      })
+      .run();
+  }
 }

@@ -1,4 +1,4 @@
-import { readReconciliations } from "./reconciliations.js";
+import { readReconciliations, invalidateReconciliations } from "./reconciliations.js";
 import { eq } from "drizzle-orm";
 import type {
   TransactionPreview,
@@ -10,11 +10,16 @@ import { migrationsFolder, validateMigrationHistory } from "./migration-history.
 import { parseAccountRow, parseManualTransactionRow } from "./rows.js";
 import { accounts } from "./schema/accounts.js";
 import { transactions } from "./schema/transactions.js";
-import { reconciliations } from "./schema/reconciliations.js";
 import { changes } from "./schema/changes.js";
 type Connection = ReturnType<typeof openDatabase>;
 type Queries = Pick<Connection["db"], "select" | "insert" | "update">;
 function save(db: Queries, preview: TransactionPreview) {
+  invalidateReconciliations(
+    db,
+    preview.affectedReconciliations,
+    preview.operationId,
+    preview.recordedAt,
+  );
   if (preview.before === null) db.insert(transactions).values(preview.after).run();
   else
     db.update(transactions).set(preview.after).where(eq(transactions.id, preview.after.id)).run();
@@ -52,12 +57,6 @@ function sessionFor(db: Queries): TransactionSession {
         .orderBy(transactions.occurredOn, transactions.createdAt, transactions.id)
         .all()
         .map(parseManualTransactionRow),
-    hasReconciliations: (id) =>
-      db
-        .select({ id: reconciliations.id })
-        .from(reconciliations)
-        .where(eq(reconciliations.accountId, id))
-        .get() !== undefined,
     save: (preview) => save(db, preview),
   };
 }
