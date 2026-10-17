@@ -914,6 +914,238 @@
           "stderrContains": []
         }
       ]
+    },
+    {
+      "id": "terminal.snapshots.manage",
+      "name": "Record and correct dated Tracking balances",
+      "prerequisites": [
+        "Use a new temporary database and synthetic values only. Each script write requires confirmation.",
+        "Capture accountId from account JSON. Capture snapshotId and snapshotRevision from snapshot JSON when captureSnapshot is true.",
+        "Check each exit status and output signal before capturing IDs. Observations have separate effective dates and observed timestamps."
+      ],
+      "sourceFiles": [
+        "src/cli/snapshots.ts",
+        "src/cli/parse.ts",
+        "src/cli/prompts.ts",
+        "src/cli/render.ts",
+        "src/application/snapshots.ts",
+        "src/application/accounts.ts",
+        "src/application/ports.ts",
+        "src/storage/snapshots.ts",
+        "src/storage/accounts.ts",
+        "src/storage/rows.ts"
+      ],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"ok\":true"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "add",
+            "--name",
+            "Synthetic Tracking",
+            "--kind",
+            "tracking",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "stdoutContains": ["\"kind\":\"tracking\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "show", "${accountId}"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["no balance recorded"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "add",
+            "--account",
+            "${accountId}",
+            "--as-of",
+            "2026-10-15",
+            "--balance",
+            "5000",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"balanceCents\":500000", "\"source\":\"manual\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "add",
+            "--account",
+            "${accountId}",
+            "--as-of",
+            "2026-10-16",
+            "--balance",
+            "5200",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureSnapshot": true,
+          "stdoutContains": ["\"balanceCents\":520000", "\"revision\":1"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "list"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["${accountId}", "last known USD 5200.00 on 2026-10-16 | manual"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "add",
+            "--account",
+            "${accountId}",
+            "--as-of",
+            "2026-10-16",
+            "--balance",
+            "0",
+            "--confirm"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": [
+            "same-date",
+            "${snapshotId}",
+            "revision ${snapshotRevision}",
+            "snapshot correct"
+          ]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "correct",
+            "${snapshotId}",
+            "--balance",
+            "-100",
+            "--expected-version",
+            "${snapshotRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureSnapshot": true,
+          "stdoutContains": ["${snapshotId}", "\"balanceCents\":-10000", "\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "correct",
+            "${snapshotId}",
+            "--balance",
+            "0",
+            "--expected-version",
+            "1",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["stale-version"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "list",
+            "--account",
+            "${accountId}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": [
+            "${snapshotId}",
+            "\"balanceCents\":500000",
+            "\"balanceCents\":-10000",
+            "\"effectiveDate\":\"2026-10-16\""
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "register", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 2,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["tracking-register"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "snapshot",
+            "list",
+            "--account",
+            "missing-synthetic-id",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 3,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["account-unavailable"]
+        }
+      ]
     }
   ]
 }

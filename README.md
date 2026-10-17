@@ -2,7 +2,7 @@
 
 A personal envelope-budgeting app for one household. Terminal first; protected family web access later.
 
-Status: local account creation, inspection, corrections, manual transaction registers, and bank reconciliation work from the terminal. Private database initialization, migrations, and the check baseline are installed.
+Status: local account creation, inspection, corrections, manual transaction registers, bank reconciliation, and dated Tracking balances work from the terminal. Private database initialization, migrations, and the check baseline are installed.
 
 Run `npm run inab -- --help` for command status. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
@@ -34,11 +34,11 @@ npm run inab -- --db /absolute/private/path/plan.sqlite account rename ACCOUNT_I
 npm run inab -- --db /absolute/private/path/plan.sqlite account opening ACCOUNT_ID --amount 100.00 --as-of 2026-10-15 --expected-version 2 --confirm --json
 ```
 
-Use the returned account ID and current revision for edits. Duplicate names remain separate accounts. Cash inflows are positive; cash outflows and credit debt are negative. Opening amounts are the bank's posted closing balance on the stated date. Currency is USD. Tracking creation uses `--kind tracking` without an opening amount or date; it shows "no balance recorded" until snapshot support is added.
+Use the returned account ID and current revision for edits. Duplicate names remain separate accounts. Cash inflows are positive; cash outflows and credit debt are negative. Opening amounts are the bank's posted closing balance on the stated date. Currency is USD. Tracking creation uses `--kind tracking` without an opening amount or date; it shows "no balance recorded" until the first snapshot is recorded.
 
-In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `cancel`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
+In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `cancel`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision, same-date snapshot conflict, or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
 
-Opening corrections reject posted entries inside the new opening period. An opening amount or date correction marks all valid reconciliations `needs-review`. The preview lists affected IDs and cutoff dates. Confirmation saves the correction, review states, and audit records together. Snapshot commands remain planned. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
+Opening corrections reject posted entries inside the new opening period. An opening amount or date correction marks all valid reconciliations `needs-review`. The preview lists affected IDs and cutoff dates. Confirmation saves the correction, review states, and audit records together. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
 
 ## Conventions
 
@@ -79,3 +79,19 @@ npm run inab -- --db /absolute/private/path/plan.sqlite reconciliation list --ac
 Compare the bank's posted closing balance at the cutoff with the cleared register balance. Pending entries stay uncleared. Credit debt is negative. A mismatch reports the difference, exits with code 4, and saves no reconciliation or adjustment. A match shows a preview and requires confirmation. Scripts require a cutoff, bank balance, and `--confirm` for a match. Terminal prompts show the local date default; an explicit date overrides it.
 
 Confirmation rechecks the account revision and current balance, then saves the reconciliation, original entry evidence, and audit record together. Repeat confirmation at the same cutoff and account revision returns the existing record with `reused: true` and no new operation ID. Lists show the full opening and entry evidence. Registers show `reconciled` only when that evidence still matches current balance values. Payee and memo edits keep coverage and preserve the original evidence revision. Corrections preserve original evidence and mark affected checks `needs-review`. Confirmation rechecks both the account revision and the affected check list. A new check can confirm the corrected balance; old review records keep their original evidence and review state.
+
+## Record Tracking balances
+
+```sh
+npm run inab -- --db /absolute/private/path/plan.sqlite snapshot add --account ACCOUNT_ID --as-of 2026-10-16 --balance 5200.00 --confirm --json
+npm run inab -- --db /absolute/private/path/plan.sqlite snapshot list --account ACCOUNT_ID --json
+npm run inab -- --db /absolute/private/path/plan.sqlite snapshot correct SNAPSHOT_ID --balance 5300.00 --expected-version 1 --confirm --json
+```
+
+Assets are positive; liabilities are negative; zero is valid. Each observation has an effective date, an observed timestamp, and source `manual`. Account show and list display the last known balance with its effective date and source. Observations are never summed. An older effective date does not replace the latest balance. Empty Tracking accounts show `no balance recorded`.
+
+Only Tracking accounts accept snapshots. They cannot use the transaction register or bank reconciliation. Future effective dates are refused because scheduling is not supported. Scripts require the account, date, amount, and `--confirm` for add; correction requires the snapshot ID, amount, expected revision, and `--confirm`. Terminal input shows today's local date as a default. An explicit date overrides it.
+
+A second add for the same account and date exits with code 4. The error gives the existing snapshot ID and revision and a `snapshot correct` command. Correction retains the ID and effective date, updates the observed timestamp, and advances the snapshot revision. Each snapshot write also advances the account revision. Confirmation rechecks both revisions and date uniqueness inside one write transaction. Snapshot, account revision, and original before/after audit evidence commit together. Stale previews exit with code 4. Storage failures report the operation ID; inspect the result before retrying.
+
+Account show and list each read account values and latest observations from one database snapshot. Their JSON output adds `latestSnapshot` without replacing account IDs or existing account fields. The workflow map includes the complete synthetic snapshot sequence. User backup and restore commands remain planned.

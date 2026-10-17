@@ -14,7 +14,7 @@
 
 Read the [design](../specs/2026-10-17-inab-design.md), [manual-account decision](../../decisions/2026-10-17-manual-account-defaults.md), [conventions](../../../README.md), and [verification guide](../../verification.md). Those documents own product decisions. This plan supplies implementation choices and test cases; choices marked proposed are recommendations for this slice, not prior user decisions.
 
-The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit reconciliation and original balance evidence are implemented. Correction invalidation now preserves evidence and marks affected checks for review. Snapshots and user recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
+The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit reconciliation and original balance evidence are implemented. Correction invalidation now preserves evidence and marks affected checks for review. Tracking snapshots and dated last-known account views are implemented. User recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
 
 All paths below are relative to `/Users/sweiss/code/inab`. Use the current checkout unless execution needs isolation. Never read real YNAB exports for these tests. Use generated synthetic records and temporary database directories. Do not commit or publish private data. No remote creation, push, paid service, or deployment is part of this plan.
 
@@ -250,11 +250,11 @@ it("keeps pending purchases outside the cleared balance", () => {
 **Create:** `src/application/snapshots.ts`, `src/storage/snapshots.ts`, `tests/integration/snapshots.test.ts`, `tests/cli/snapshots.test.ts`.
 **Modify:** account show/list rendering, ports, feature map.
 
-- [ ] Test snapshots of $5,000 and $5,200 on different dates: last known balance is $5,200 with its effective date, not $10,200 or an unqualified current balance. Insert an older snapshot and verify it does not replace the latest observation. Negative liabilities and zero balances work.
-- [ ] Test same-date add conflict, explicit correction with version, restart, and refusal on Cash/Credit accounts. Run `npm test -- tests/integration/snapshots.test.ts tests/cli/snapshots.test.ts`; expect red.
-- [ ] Implement add/list/correct; store observed timestamp separately from effective date. Label source manual. Snapshot correction writes audit history atomically. Empty Tracking accounts display `no balance recorded`, not zero.
-- [ ] Test that snapshots do not appear in a transaction register or reconciliation workflow. No aggregate budget or net-worth total is required yet.
-- [ ] Run focused checks and feature map. Commit: `feat: record manual Tracking balances`.
+- [x] Test snapshots of $5,000 and $5,200 on different dates: last known balance is $5,200 with its effective date, not $10,200 or an unqualified current balance. Insert an older snapshot and verify it does not replace the latest observation. Negative liabilities and zero balances work.
+- [x] Test same-date add conflict, explicit correction with version, restart, and refusal on Cash/Credit accounts. Run `npm test -- tests/integration/snapshots.test.ts tests/cli/snapshots.test.ts`; expect red.
+- [x] Implement add/list/correct; store observed timestamp separately from effective date. Label source manual. Snapshot correction writes audit history atomically. Empty Tracking accounts display `no balance recorded`, not zero.
+- [x] Test that snapshots do not appear in a transaction register or reconciliation workflow. No aggregate budget or net-worth total is required yet.
+- [x] Run focused checks and feature map. Commit: `feat: record manual Tracking balances`.
 
 ### Task 11 — Back up and restore to a new database
 

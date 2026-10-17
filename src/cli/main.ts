@@ -1,3 +1,4 @@
+import { executeSnapshot } from "./snapshots.js";
 import { executeReconciliation } from "./reconciliation.js";
 import { executeTransaction } from "./transactions.js";
 import { resolve } from "node:path";
@@ -14,7 +15,7 @@ import {
   PromptCancelled,
   terminalPrompts,
 } from "./prompts.js";
-import { renderAccount, renderInspection, renderPreview } from "./render.js";
+import { renderAccount, renderAccountSummary, renderInspection, renderPreview } from "./render.js";
 const help = `INAB — manual accounts
 
 Usage: inab --db PATH COMMAND [--json]
@@ -29,6 +30,9 @@ Available:
   transaction unclear ID --expected-version N --confirm
   register ID
   reconcile ID --as-of DATE --bank-balance SIGNED_USD [--confirm]
+  snapshot add --account ID --as-of DATE --balance SIGNED_USD --confirm
+  snapshot correct ID --balance SIGNED_USD --expected-version N --confirm
+  snapshot list --account ID
   reconciliation list --account ID
   account list
   account show ID
@@ -41,7 +45,6 @@ In a terminal, the opening date prompt shows today's local date. Scripts require
 Writes show a preview. Enter cancel to stop a prompt. Scripts require --confirm.
 
 These manual-account commands are planned and not available yet:
-  snapshot add|correct|list
   backup --to NEW_PATH
   restore --from BACKUP_PATH --to NEW_PATH
 `;
@@ -96,6 +99,10 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     output(command.json, result, `Initialized database: ${result.database}`);
     return;
   }
+  if (command.action.startsWith("snapshot-")) {
+    await executeSnapshot(command, prompts);
+    return;
+  }
   if (command.action === "reconcile" || command.action === "reconciliation-list") {
     await executeReconciliation(command, prompts);
     return;
@@ -110,7 +117,8 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     output(
       command.json,
       { ok: true, accounts },
-      accounts.map(renderAccount).join("\n") || "No accounts",
+      accounts.map((account) => renderAccountSummary(account, account.latestSnapshot)).join("\n") ||
+        "No accounts",
     );
     return;
   }
@@ -119,7 +127,7 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     output(
       command.json,
       { ok: true, ...inspected },
-      renderInspection(inspected.account, inspected.balances),
+      renderInspection(inspected.account, inspected.balances, inspected.latestSnapshot),
     );
     return;
   }

@@ -59,6 +59,7 @@ export async function completeCommand(
   today: string,
 ): Promise<TerminalCommand> {
   const value = { ...command };
+  if (value.action.startsWith("snapshot-")) return completeSnapshot(value, prompts, today);
   if (value.action === "reconciliation-list" || value.action === "reconcile")
     return completeReconciliation(value, prompts, today);
   if (value.action.startsWith("transaction-") || value.action === "register")
@@ -157,4 +158,22 @@ async function completeTransactionFields(
     value.action === "transaction-add"
       ? (value.memo ?? "")
       : await required(value.memo, "Memo; empty clears it (or cancel): ", prompts);
+}
+
+async function completeSnapshot(value: TerminalCommand, prompts: TerminalPrompts, today: string) {
+  if (value.action === "snapshot-correct") {
+    value.id = await required(value.id, "Snapshot ID (or cancel): ", prompts);
+    await completeVersion(value, prompts);
+  } else value.accountId = await required(value.accountId, "Account ID (or cancel): ", prompts);
+  if (value.action === "snapshot-list") return value;
+  value.opening = await required(
+    value.opening,
+    "Signed USD balance; assets positive, liabilities negative (or cancel): ",
+    prompts,
+  );
+  if (value.action === "snapshot-add" && value.date === null) {
+    if (!prompts.interactive) throw new InvalidInput("Scripts require --as-of YYYY-MM-DD");
+    value.date = (await prompts.ask(`Effective balance date [${today}] (or cancel): `)) || today;
+  }
+  return value;
 }

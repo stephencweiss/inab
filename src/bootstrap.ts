@@ -1,3 +1,5 @@
+import { createSnapshots } from "./application/snapshots.js";
+import { createSnapshotStore } from "./storage/snapshots.js";
 import { createReconciliations } from "./application/reconcile.js";
 import { createReconciliationStore } from "./storage/reconciliations.js";
 import { createTransactions } from "./application/transactions.js";
@@ -29,6 +31,14 @@ export function transactionApplication(path: string) {
 
 export function reconciliationApplication(path: string) {
   return createReconciliations(createReconciliationStore(path), {
+    id: randomUUID,
+    now: () => new Date().toISOString(),
+    today: localToday,
+  });
+}
+
+export function snapshotApplication(path: string) {
+  return createSnapshots(createSnapshotStore(path), {
     id: randomUUID,
     now: () => new Date().toISOString(),
     today: localToday,

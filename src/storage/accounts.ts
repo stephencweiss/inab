@@ -1,3 +1,4 @@
+import { readSnapshots } from "./snapshots.js";
 import { readReconciliations, invalidateReconciliations } from "./reconciliations.js";
 import { orderRegisterEntries } from "../accounts/register.js";
 import { eq } from "drizzle-orm";
@@ -13,6 +14,14 @@ type Connection = ReturnType<typeof openDatabase>;
 type Queries = Pick<Connection["db"], "select" | "insert" | "update">;
 function sessionFor(db: Queries): AccountSession {
   return {
+    list: () =>
+      db
+        .select()
+        .from(accounts)
+        .orderBy(accounts.createdAt, accounts.id)
+        .all()
+        .map(parseAccountRow),
+    latestSnapshot: (id) => readSnapshots(db, id).at(-1) ?? null,
     get: (id) => {
       const row = db.select().from(accounts).where(eq(accounts.id, id)).get();
       return row ? parseAccountRow(row) : null;
@@ -59,19 +68,6 @@ export function createAccountStore(path: string): AccountStore {
     }
   }
   return {
-    list: () => {
-      const connection = connect();
-      try {
-        return connection.db
-          .select()
-          .from(accounts)
-          .orderBy(accounts.createdAt, accounts.id)
-          .all()
-          .map(parseAccountRow);
-      } finally {
-        connection.sqlite.close();
-      }
-    },
     read: (work) => {
       const connection = connect();
       try {

@@ -19,13 +19,14 @@ export type AccountPreview = {
   recordedAt: string;
 };
 export type AccountSession = {
+  list: () => StoredAccount[];
+  latestSnapshot: (id: string) => Snapshot | null;
   get: (id: string) => StoredAccount | null;
   entries: (id: string) => RegisterEntry[];
   reconciliations: (id: string) => Reconciliation[];
   save: (preview: AccountPreview) => void;
 };
 export type AccountStore = {
-  list: () => StoredAccount[];
   read: <T>(work: (session: AccountSession) => T) => T;
   write: <T>(work: (session: AccountSession) => T) => T;
 };
@@ -107,3 +108,43 @@ export type ReconciliationStore = {
   read: <T>(work: (session: ReconciliationSession) => T) => T;
   write: <T>(work: (session: ReconciliationSession) => T) => T;
 };
+
+export type Snapshot = {
+  id: string;
+  accountId: string;
+  effectiveDate: string;
+  balanceCents: number;
+  source: "manual";
+  observedAt: string;
+  revision: number;
+};
+export type SnapshotFailure =
+  | "invalid-snapshot"
+  | "account-unavailable"
+  | "snapshot-unavailable"
+  | "stale-version"
+  | "tracking-only"
+  | "future-date";
+export type SnapshotResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; reason: SnapshotFailure }
+  | { ok: false; reason: "same-date"; existing: Snapshot };
+export type SnapshotPreview = {
+  operationId: string;
+  operation: "snapshot.add" | "snapshot.correct";
+  account: StoredAccount;
+  before: Snapshot | null;
+  after: Snapshot;
+  recordedAt: string;
+};
+export type SnapshotSession = {
+  account: (id: string) => StoredAccount | null;
+  get: (id: string) => Snapshot | null;
+  list: (accountId: string) => Snapshot[];
+  save: (preview: SnapshotPreview) => void;
+};
+export type SnapshotStore = {
+  read: <T>(work: (session: SnapshotSession) => T) => T;
+  write: <T>(work: (session: SnapshotSession) => T) => T;
+};
+export type AccountSummary = StoredAccount & { latestSnapshot: Snapshot | null };

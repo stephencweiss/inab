@@ -7,6 +7,7 @@ import { validateCents } from "../lib/money.js";
 import type {
   AffectedReconciliation,
   AccountPreview,
+  Snapshot,
   AccountResult,
   AccountRuntime,
   AccountSession,
@@ -240,13 +241,19 @@ export function createAccounts(store: AccountStore, runtime: AccountRuntime) {
       return value === null ? { ok: false, reason: "account-unavailable" } : { ok: true, value };
     });
   }
-  function inspect(
-    id: string,
-  ): AccountResult<{ account: StoredAccount; balances: AccountBalances | null }> {
+  function inspect(id: string): AccountResult<{
+    account: StoredAccount;
+    balances: AccountBalances | null;
+    latestSnapshot: Snapshot | null;
+  }> {
     return store.read((session) => {
       const account = session.get(id);
       if (account === null) return { ok: false, reason: "account-unavailable" };
-      if (account.kind === "tracking") return { ok: true, value: { account, balances: null } };
+      if (account.kind === "tracking")
+        return {
+          ok: true,
+          value: { account, balances: null, latestSnapshot: session.latestSnapshot(id) },
+        };
       const entries = session.entries(id);
       const cutoff = entries.reduce(
         (date, entry) => (entry.postedOn !== null && entry.postedOn > date ? entry.postedOn : date),
@@ -258,8 +265,22 @@ export function createAccounts(store: AccountStore, runtime: AccountRuntime) {
           ok: false,
           reason: result.reason === "unsafe-cents" ? "unsafe-cents" : "invalid-account",
         };
-      return { ok: true, value: { account, balances: result.value } };
+      return { ok: true, value: { account, balances: result.value, latestSnapshot: null } };
     });
   }
-  return { previewAdd, previewRename, previewOpening, commit, show, list: store.list, inspect };
+  return {
+    previewAdd,
+    previewRename,
+    previewOpening,
+    commit,
+    show,
+    list: () =>
+      store.read((session) =>
+        session.list().map((account) => ({
+          ...account,
+          latestSnapshot: account.kind === "tracking" ? session.latestSnapshot(account.id) : null,
+        })),
+      ),
+    inspect,
+  };
 }

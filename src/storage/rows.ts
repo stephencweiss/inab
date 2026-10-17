@@ -1,7 +1,7 @@
 import type { RegisterEntry } from "../accounts/types.js";
 import type { StoredAccount } from "../application/ports.js";
 import { parseNewAccount } from "../application/accounts.js";
-import { parseDate } from "../lib/date.js";
+import { parseDate, isUtcTimestamp } from "../lib/date.js";
 import { validateCents } from "../lib/money.js";
 export function parseInteger(value: unknown): number {
   const result = typeof value === "bigint" ? Number(value) : value;
@@ -21,15 +21,7 @@ export function parseMigrationRow(value: unknown) {
 }
 
 export function parseTimestamp(value: unknown) {
-  if (
-    typeof value !== "string" ||
-    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)
-  )
-    throw new Error("Invalid database timestamp");
-  const time = Date.parse(value);
-  const canonical = value.includes(".") ? value : value.replace("Z", ".000Z");
-  if (!Number.isFinite(time) || new Date(time).toISOString() !== canonical)
-    throw new Error("Invalid database timestamp");
+  if (!isUtcTimestamp(value)) throw new Error("Invalid database timestamp");
   return value;
 }
 
@@ -91,5 +83,31 @@ export function parseManualTransactionRow(
     revision,
     createdAt: parseTimestamp(value.createdAt),
     updatedAt: parseTimestamp(value.updatedAt),
+  };
+}
+
+export function parseSnapshotRow(value: unknown): import("./schema/snapshots.js").SnapshotRow {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !value.id ||
+    typeof value.accountId !== "string" ||
+    !value.accountId ||
+    typeof value.effectiveDate !== "string" ||
+    !parseDate(value.effectiveDate).ok ||
+    value.source !== "manual"
+  )
+    throw new Error("Invalid snapshot row");
+  const balanceCents = parseInteger(value.balanceCents);
+  const revision = parseInteger(value.revision);
+  if (revision < 1) throw new Error("Invalid snapshot revision");
+  return {
+    id: value.id,
+    accountId: value.accountId,
+    effectiveDate: value.effectiveDate,
+    balanceCents,
+    source: value.source,
+    observedAt: parseTimestamp(value.observedAt),
+    revision,
   };
 }

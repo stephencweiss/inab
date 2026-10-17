@@ -14,3 +14,14 @@ export function parseDate(input: unknown): DateResult {
   if (year === 0 || day < 1 || day > limit) return { ok: false, reason: "invalid-date" };
   return { ok: true, value: input };
 }
+
+export function isUtcTimestamp(value: unknown): value is string {
+  if (
+    typeof value !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)
+  )
+    return false;
+  const time = Date.parse(value);
+  const canonical = value.includes(".") ? value : value.replace("Z", ".000Z");
+  return Number.isFinite(time) && new Date(time).toISOString() === canonical;
+}

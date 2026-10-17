@@ -1,3 +1,10 @@
+function parseSnapshotAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
+  if (words.length === 2 && words[1] === "add") return { action: "snapshot-add", id: null };
+  if (words.length === 2 && words[1] === "list") return { action: "snapshot-list", id: null };
+  if (words.length <= 3 && words[1] === "correct")
+    return { action: "snapshot-correct", id: words[2] ?? null };
+  throw new Error("Invalid snapshot arguments");
+}
 function parseTransactionAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
   const action = words[1];
   if (action === "add" && words.length === 2) return { action: "transaction-add", id: null };
@@ -11,6 +18,9 @@ function parseTransactionAction(words: string[]): Pick<TerminalCommand, "action"
 export type TerminalCommand = {
   database: string;
   action:
+    | "snapshot-add"
+    | "snapshot-correct"
+    | "snapshot-list"
     | "init"
     | "add"
     | "list"
@@ -39,6 +49,7 @@ export type TerminalCommand = {
   expectedVersion: number | null;
 };
 const valueFlags = new Set([
+  "--balance",
   "--db",
   "--bank-balance",
   "--account",
@@ -55,6 +66,9 @@ const valueFlags = new Set([
   "--expected-version",
 ]);
 const flagsFor = {
+  "snapshot-add": ["--db", "--account", "--as-of", "--balance", "--confirm", "--json"],
+  "snapshot-correct": ["--db", "--balance", "--expected-version", "--confirm", "--json"],
+  "snapshot-list": ["--db", "--account", "--json"],
   reconcile: ["--db", "--as-of", "--bank-balance", "--confirm", "--json"],
   "reconciliation-list": ["--db", "--account", "--json"],
   "transaction-add": [
@@ -116,6 +130,7 @@ function parseAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
     return { action: "reconcile", id: words[1] ?? null };
   if (words[0] === "reconciliation" && words[1] === "list" && words.length === 2)
     return { action: "reconciliation-list", id: null };
+  if (words[0] === "snapshot") return parseSnapshotAction(words);
   if (words[0] === "transaction") return parseTransactionAction(words);
   return parseAccountAction(words);
 }
@@ -146,6 +161,7 @@ export function parseArguments(args: string[]): TerminalCommand {
   if (parsed.action === "opening" || parsed.action.startsWith("transaction-"))
     amountFlag = "--amount";
   if (parsed.action === "reconcile") amountFlag = "--bank-balance";
+  if (parsed.action.startsWith("snapshot-")) amountFlag = "--balance";
   return {
     database,
     accountId: flags.get("--account") ?? null,

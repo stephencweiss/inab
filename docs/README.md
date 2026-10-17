@@ -10,7 +10,8 @@
 | [Manual-account defaults decision](decisions/2026-10-17-manual-account-defaults.md) | Agreed opening balance and reconciliation defaults |
 | [Drizzle and SQLite decision](decisions/2026-10-17-drizzle-sqlite.md) | Agreed ORM, schema types, and migration approach |
 | [Migration version authority](decisions/2026-10-17-migration-version-authority.md) | Implementation constraint: validated Drizzle ledger sequence owns schema version |
-| [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, and correction review steps with synthetic execution checks |
+| [Tracking snapshot revisions](decisions/2026-10-17-tracking-snapshot-revisions.md) | Implementation constraint: atomic account/snapshot revisions and dated last-known views |
+| [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, correction review, and Tracking snapshot steps with synthetic execution checks |
 | [Verification plan](verification.md) | Required evidence, planned checks, and current enforcement status |
 | [Convention adoption decision](decisions/2026-10-17-agent-conventions.md) | What we adopted from SuChef and what we changed |
 

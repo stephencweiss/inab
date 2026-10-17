@@ -40,6 +40,7 @@ function parseStep(value: unknown) {
     promptAnswers: parseStrings(value.promptAnswers),
     exitStatus: value.exitStatus,
     captureAccount: value.captureAccount,
+    captureSnapshot: value.captureSnapshot === true,
     captureTransaction: value.captureTransaction === true,
     captureReconciliation: value.captureReconciliation === true,
     stdoutContains: parseStrings(value.stdoutContains),
@@ -108,6 +109,17 @@ function parseCapturedTransaction(output: string) {
     throw new Error("Cannot capture transaction ID/revision");
   return { id: parsed.transaction.id, revision: parsed.transaction.revision };
 }
+function parseCapturedSnapshot(output: string) {
+  const parsed: unknown = JSON.parse(output);
+  if (
+    !isRecord(parsed) ||
+    !isRecord(parsed.snapshot) ||
+    typeof parsed.snapshot.id !== "string" ||
+    typeof parsed.snapshot.revision !== "number"
+  )
+    throw new Error("Cannot capture snapshot ID/revision");
+  return { id: parsed.snapshot.id, revision: parsed.snapshot.revision };
+}
 function parseCapturedReconciliation(output: string) {
   const parsed: unknown = JSON.parse(output);
   if (
@@ -123,6 +135,11 @@ function captureVariables(
   stdout: string,
   variables: Map<string, string>,
 ) {
+  if (step.captureSnapshot) {
+    const captured = parseCapturedSnapshot(stdout);
+    variables.set("snapshotId", captured.id);
+    variables.set("snapshotRevision", String(captured.revision));
+  }
   if (step.captureReconciliation)
     variables.set("reconciliationId", parseCapturedReconciliation(stdout));
   if (step.captureTransaction) {
@@ -145,7 +162,7 @@ it("validates the hand-authored account map and executes its exact terminal comm
     const variables = new Map([["database", fixture.path]]);
     const substitute = (text: string) =>
       text.replace(
-        /\$\{(database|accountId|revision|transactionId|transactionRevision|reconciliationId)\}/g,
+        /\$\{(database|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision)\}/g,
         (_, key: string) => {
           const value = variables.get(key);
           if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
