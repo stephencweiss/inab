@@ -18,8 +18,10 @@
     "check": "tsx scripts/check.ts",
     "prepare": "husky",
     "inab": "tsx src/cli/main.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "check:boundaries": "tsx scripts/check-boundaries.ts"
+    "build": "tsc -p tsconfig.build.json && tsx scripts/copy-migrations.ts",
+    "check:boundaries": "tsx scripts/check-boundaries.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/cli/migrate.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

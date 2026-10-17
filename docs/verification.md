@@ -1,6 +1,6 @@
 # Verification and enforcement
 
-Status: the check baseline runs locally and in GitHub Actions. Import boundary rules are active. Application workflows remain planned.
+Status: the check baseline runs locally and in GitHub Actions. Import boundary rules are active. Storage initialization is verified; account workflows remain planned.
 
 Prefer rules that fail automatically over instructions an agent must remember. Each check needs a valid example that passes and an invalid example that fails. Use existing tools before writing custom rules. Tests must verify behavior, not repeat the implementation.
 
@@ -16,7 +16,7 @@ Prefer rules that fail automatically over instructions an agent must remember. E
 | Private data and secrets stay out of source and CI | Tracked-path policy and secret scan; inspect publish scope | Active | First commit and every CI run |
 | Manual accounts and balances work without providers | Pure balance and opening-boundary tests are active; register workflows and reconciliation tests remain planned | Partial | Slice 1 |
 | Imports preserve identity and commit atomically | Synthetic import fixtures and database integration tests | Planned | Slice 2 |
-| Migrations and restore preserve data | Temporary database upgrade and backup restore tests | Planned | First persisted data |
+| Migrations and restore preserve data | Temporary database init/upgrade, history, rollback, constraint, private-file, and consistent backup tests; user restore remains planned | Partial | First persisted data |
 | Budget money remains correct | Accounting examples and invariant tests | Planned | Slice 3 |
 | Split amounts remain correct | Parent/allocation sum tests | Planned | First split support |
 | Documented workflows work | Feature-map schema and terminal execution tests | Planned | First working workflow |
@@ -27,7 +27,7 @@ Financial rules need runtime validation, database constraints, and tests. Lint a
 
 ## Local and CI entry point
 
-`npm run check` runs each installed check in order and stops at the first failure. It runs the document check, the tracked-path check, the import boundary check, Prettier, ESLint, `tsc --noEmit`, Vitest, and Secretlint. It also runs CLI subprocess tests and builds the terminal entry point with TypeScript. Help and invalid-command handling are verified; account workflows remain planned.
+`npm run check` runs each installed check in order and stops at the first failure. It runs the document check, the tracked-path check, the import boundary check, Prettier, ESLint, `tsc --noEmit`, Vitest, and Secretlint. It also runs CLI subprocess tests and builds the terminal entry point with TypeScript. Help, init, migration target handling, and invalid-command handling are verified; account workflows remain planned. The init test builds and runs an isolated copy of the terminal output from another working directory.
 
 The commit hook runs the document check, the tracked-path check, and lint. CI runs `npm run check` for pull requests and for `main`. The workflow uses Node.js 24.16.0, `npm ci`, read-only repository permissions, and pinned action commits. Do not run destructive formatting or file writes in CI checks. Do not expose secrets to pull requests or upload household databases or raw provider payloads as artifacts.
 

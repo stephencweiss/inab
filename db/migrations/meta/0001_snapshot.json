@@ -1,0 +1,543 @@
+{
+  "id": "40fd2d89-799e-4710-8ce4-09d13c0719b2",
+  "prevId": "1277525c-54b4-4b9d-9002-68a33a8bbc9a",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "accounts": {
+      "name": "accounts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "opening_cents": {
+          "name": "opening_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "opening_date": {
+          "name": "opening_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "accounts_name": {
+          "name": "accounts_name",
+          "value": "length(trim(\"accounts\".\"name\")) > 0"
+        },
+        "accounts_kind": {
+          "name": "accounts_kind",
+          "value": "\"accounts\".\"kind\" IN ('cash', 'credit', 'tracking')"
+        },
+        "accounts_currency": {
+          "name": "accounts_currency",
+          "value": "\"accounts\".\"currency\" = 'USD'"
+        },
+        "accounts_opening": {
+          "name": "accounts_opening",
+          "value": "(\"accounts\".\"kind\" = 'tracking' AND \"accounts\".\"opening_cents\" IS NULL AND \"accounts\".\"opening_date\" IS NULL) OR (\"accounts\".\"kind\" IN ('cash', 'credit') AND \"accounts\".\"opening_cents\" IS NOT NULL AND \"accounts\".\"opening_date\" IS NOT NULL)"
+        },
+        "accounts_cents": {
+          "name": "accounts_cents",
+          "value": "\"accounts\".\"opening_cents\" IS NULL OR (typeof(\"accounts\".\"opening_cents\") = 'integer' AND \"accounts\".\"opening_cents\" BETWEEN -9007199254740991 AND 9007199254740991)"
+        },
+        "accounts_revision": {
+          "name": "accounts_revision",
+          "value": "typeof(\"accounts\".\"revision\") = 'integer' AND \"accounts\".\"revision\" BETWEEN 1 AND 9007199254740991"
+        }
+      }
+    },
+    "transactions": {
+      "name": "transactions",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "occurred_on": {
+          "name": "occurred_on",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "posted_on": {
+          "name": "posted_on",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cents": {
+          "name": "cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payee": {
+          "name": "payee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "memo": {
+          "name": "memo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transactions_account_id_accounts_id_fk": {
+          "name": "transactions_account_id_accounts_id_fk",
+          "tableFrom": "transactions",
+          "columnsFrom": ["account_id"],
+          "tableTo": "accounts",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "transactions_cents": {
+          "name": "transactions_cents",
+          "value": "typeof(\"transactions\".\"cents\") = 'integer' AND \"transactions\".\"cents\" BETWEEN -9007199254740991 AND 9007199254740991 AND \"transactions\".\"cents\" <> 0"
+        },
+        "transactions_revision": {
+          "name": "transactions_revision",
+          "value": "typeof(\"transactions\".\"revision\") = 'integer' AND \"transactions\".\"revision\" BETWEEN 1 AND 9007199254740991"
+        }
+      }
+    },
+    "reconciliation_entries": {
+      "name": "reconciliation_entries",
+      "columns": {
+        "reconciliation_id": {
+          "name": "reconciliation_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "transaction_revision": {
+          "name": "transaction_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cents": {
+          "name": "cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "posted_on": {
+          "name": "posted_on",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reconciliation_entries_reconciliation_id_reconciliations_id_fk": {
+          "name": "reconciliation_entries_reconciliation_id_reconciliations_id_fk",
+          "tableFrom": "reconciliation_entries",
+          "columnsFrom": ["reconciliation_id"],
+          "tableTo": "reconciliations",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        },
+        "reconciliation_entries_transaction_id_transactions_id_fk": {
+          "name": "reconciliation_entries_transaction_id_transactions_id_fk",
+          "tableFrom": "reconciliation_entries",
+          "columnsFrom": ["transaction_id"],
+          "tableTo": "transactions",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "reconciliation_entries_reconciliation_id_transaction_id_pk": {
+          "columns": ["reconciliation_id", "transaction_id"],
+          "name": "reconciliation_entries_reconciliation_id_transaction_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "reconciliation_entries_cents": {
+          "name": "reconciliation_entries_cents",
+          "value": "typeof(\"reconciliation_entries\".\"cents\") = 'integer' AND \"reconciliation_entries\".\"cents\" BETWEEN -9007199254740991 AND 9007199254740991 AND \"reconciliation_entries\".\"cents\" <> 0"
+        },
+        "reconciliation_entries_revision": {
+          "name": "reconciliation_entries_revision",
+          "value": "typeof(\"reconciliation_entries\".\"transaction_revision\") = 'integer' AND \"reconciliation_entries\".\"transaction_revision\" BETWEEN 1 AND 9007199254740991"
+        }
+      }
+    },
+    "reconciliations": {
+      "name": "reconciliations",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "cutoff_date": {
+          "name": "cutoff_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bank_cents": {
+          "name": "bank_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "computed_cents": {
+          "name": "computed_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "opening_cents": {
+          "name": "opening_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "opening_date": {
+          "name": "opening_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "account_revision": {
+          "name": "account_revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "reconciliations_confirmation": {
+          "name": "reconciliations_confirmation",
+          "columns": ["account_id", "cutoff_date", "account_revision"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "reconciliations_account_id_accounts_id_fk": {
+          "name": "reconciliations_account_id_accounts_id_fk",
+          "tableFrom": "reconciliations",
+          "columnsFrom": ["account_id"],
+          "tableTo": "accounts",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "reconciliations_bank": {
+          "name": "reconciliations_bank",
+          "value": "typeof(\"reconciliations\".\"bank_cents\") = 'integer' AND \"reconciliations\".\"bank_cents\" BETWEEN -9007199254740991 AND 9007199254740991"
+        },
+        "reconciliations_computed": {
+          "name": "reconciliations_computed",
+          "value": "typeof(\"reconciliations\".\"computed_cents\") = 'integer' AND \"reconciliations\".\"computed_cents\" BETWEEN -9007199254740991 AND 9007199254740991"
+        },
+        "reconciliations_opening": {
+          "name": "reconciliations_opening",
+          "value": "typeof(\"reconciliations\".\"opening_cents\") = 'integer' AND \"reconciliations\".\"opening_cents\" BETWEEN -9007199254740991 AND 9007199254740991"
+        },
+        "reconciliations_revision": {
+          "name": "reconciliations_revision",
+          "value": "typeof(\"reconciliations\".\"account_revision\") = 'integer' AND \"reconciliations\".\"account_revision\" BETWEEN 1 AND 9007199254740991"
+        },
+        "reconciliations_status": {
+          "name": "reconciliations_status",
+          "value": "\"reconciliations\".\"status\" IN ('valid', 'needs-review')"
+        }
+      }
+    },
+    "snapshots": {
+      "name": "snapshots",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "balance_cents": {
+          "name": "balance_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "observed_at": {
+          "name": "observed_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "revision": {
+          "name": "revision",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "snapshots_account_date": {
+          "name": "snapshots_account_date",
+          "columns": ["account_id", "effective_date"],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "snapshots_account_id_accounts_id_fk": {
+          "name": "snapshots_account_id_accounts_id_fk",
+          "tableFrom": "snapshots",
+          "columnsFrom": ["account_id"],
+          "tableTo": "accounts",
+          "columnsTo": ["id"],
+          "onUpdate": "no action",
+          "onDelete": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "snapshots_cents": {
+          "name": "snapshots_cents",
+          "value": "typeof(\"snapshots\".\"balance_cents\") = 'integer' AND \"snapshots\".\"balance_cents\" BETWEEN -9007199254740991 AND 9007199254740991"
+        },
+        "snapshots_revision": {
+          "name": "snapshots_revision",
+          "value": "typeof(\"snapshots\".\"revision\") = 'integer' AND \"snapshots\".\"revision\" BETWEEN 1 AND 9007199254740991"
+        },
+        "snapshots_source": {
+          "name": "snapshots_source",
+          "value": "\"snapshots\".\"source\" = 'manual'"
+        }
+      }
+    },
+    "changes": {
+      "name": "changes",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "operation": {
+          "name": "operation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "before_json": {
+          "name": "before_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "after_json": {
+          "name": "after_json",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

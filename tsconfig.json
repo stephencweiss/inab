@@ -14,5 +14,11 @@
     "types": ["node"],
     "exactOptionalPropertyTypes": true
   },
-  "include": ["scripts/**/*.ts", "tests/**/*.ts", "vitest.config.ts", "src/**/*.ts"]
+  "include": [
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.ts",
+    "src/**/*.ts",
+    "drizzle.config.ts"
+  ]
 }

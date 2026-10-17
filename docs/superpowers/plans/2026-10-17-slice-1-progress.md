@@ -85,3 +85,26 @@ Scope: exact USD cents, date validation, and pure Cash/Credit balance rules. No 
 Independent specification and code quality reviews approved Task 4 with no material findings. The lead agent also ran the full check: 16 test files and 175 tests passed, with all checks and the build passing.
 
 Task 4 is complete. The task commit is `feat: define exact manual-account balances`. Task 5 remains open.
+
+
+## October 17, 2026 — Task 5
+
+Scope: safe SQLite initialization, the first generated Drizzle schema and custom trigger migration, history checks, upgrade backups, and explicit terminal targets. No account operation or user restore command is added. Bootstrap wiring is introduced now so CLI modules do not import storage.
+
+- Red: `npm test -- tests/integration/migrations.test.ts tests/cli/init.test.ts` failed because storage did not exist and init returned exit 2. The first green run passed all seven initial tests.
+- Generated `0000_manual_accounts.sql` with pinned Kit 0.31.11 and generated the custom `0001_reconciliation_account_guard.sql` in the same chain. The lead reviewed SQL and metadata before any application. All applications used temporary synthetic databases. Regenerating the unchanged schema reported no schema changes and created no migration.
+- Schema tests check nullable opening pairs, required values, USD/classes/status/source, integer storage and safe ranges, foreign keys, unique snapshot and reconciliation keys, and same-account evidence after child and parent changes. Ordinary Drizzle queries return safe money values as numbers; raw migration history uses checked integer conversion.
+- History preflight compares the full ordered ledger prefix with committed SQL hashes and timestamps, and uses that known ledger sequence as the schema version. Unknown ledger rows, newer versions, changed history, changed SQL artifacts, and unrelated application IDs fail before migration. Missing read/migration targets do not create files.
+- The pinned Drizzle migrator rolls back all application schema on a midway failure. Its own empty ledger table can remain because it creates that table before its transaction. The pinned SQLite ledger uses `SERIAL`, so its `id` is null; validation uses ledger row order with exact hash/timestamp pairs rather than assuming generated integer IDs.
+- A synthetic version-1 fixture upgrades with its account record retained. The online SQLite backup keeps the prior schema/data and passes integrity checks. Backup failure stops the upgrade. New backups use private temporary files, check identity/version/integrity/foreign keys, then publish exclusively. Failure removes temporary output; an existing destination stays unchanged. Private database, directory, journal, backup, and temporary permissions are verified on this macOS host. Linux uses the same file modes; CI evidence is pending.
+- A two-connection test confirms immediate Drizzle transactions block a second writer and roll back changes on failure. Writable application connections enable and verify foreign keys, set a bounded busy timeout, and use the DELETE journal mode.
+- Additional red/green cases found missing human target preview, publication of an incomplete backup, and missing migration metadata in an isolated built bundle. Each test failed before its fix. Source and built modules now resolve their own migration paths without the current directory or a source-tree fallback. The built test creates an isolated copy and runs init twice from outside the repository.
+- Before review, `npm run check` passed: 18 test files and 198 tests, including 23 storage/CLI cases. Document, private-path, boundary, format, lint, type, secret, and build checks all passed. The first full run stopped at generated JSON formatting; formatting preserved parsed metadata values and SQL hashes. Regeneration still reported no schema changes. The test/build tool required broader local execution access for its IPC socket, as in prior tasks. No external service or household database was used.
+
+- Quality review found a split commit defect: Drizzle committed schema/history before a separate schema-header write. A regression injected a failure immediately after the native commit; reopening then failed on the mismatched header. The fix removes the second writable version and uses the validated Drizzle ledger sequence for runtime and backup checks. The same regression now reopens successfully and repeated init reports the committed version. See the [implementation decision](../../decisions/2026-10-17-migration-version-authority.md).
+
+- After the review fix, `npm run check` passed again: 18 test files and 199 tests, including 24 storage/CLI cases. All policy, format, lint, type, secret, and build checks passed.
+
+Independent specification and code quality reviews approved the revised implementation with no remaining material findings.
+
+Task 5 is complete. The task commit is `feat: initialize private SQLite storage`. Task 6 remains open. The four accepted development-dependency audit findings remain unchanged.
