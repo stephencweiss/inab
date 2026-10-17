@@ -136,12 +136,13 @@ Before each task commit, run the listed focused checks plus `npm run lint` and `
 **Create:** `scripts/check-documents.ts`, `scripts/check-tracked-paths.ts`, `scripts/check-boundaries.ts`, `scripts/check.ts`, `tests/policy/docs.test.ts`, `private-files.test.ts`, `boundaries.test.ts` in that test directory; formatter/linter configuration.
 **Modify:** `package.json`, `docs/conventions/utilities.md`, `docs/verification.md`, design architecture section.
 
-- [ ] Add tests with a broken local Markdown link, mismatched convention indexes, and a valid document pair. Use a temporary fixture tree, not modifications to repository docs.
-- [ ] Add a temporary Git fixture: force-stage a synthetic `.sqlite` file and an export under `ynab-export/`; expect rejection even though ignored. A generated synthetic JSON fixture under `tests/fixtures/` passes. Use `git ls-files -z` and argument arrays, never shell interpolation. Test staged mode and complete tracked-file mode.
-- [ ] Add boundary fixtures: domain importing SQLite, filesystem, network, or CLI must fail; application importing concrete storage fails; `src/bootstrap.ts` wiring passes. Test relative paths, aliases, re-exports, and dynamic imports; reject computed dynamic imports in restricted modules.
-- [ ] Run `npm test -- tests/policy/docs.test.ts tests/policy/private-files.test.ts tests/policy/boundaries.test.ts`; expect the planned violations to be missed before implementing checks. Implement checks with TypeScript AST/module resolution for imports, not text matching alone.
-- [ ] Keep the existing script names `check:documents`, `check:tracked`, `check:format`, and `lint`; add `check:boundaries`. `check:tracked` checks tracked names; secret scanning comes in Task 12. The full `check` runner invokes available checks sequentially and fails on the first nonzero exit. Skip no installed check silently.
-- [ ] Run the focused suite, all new commands, and typecheck. Expect pass. Record docs/policy checks as active only after this succeeds. Commit: `chore: enforce source and private-data boundaries`.
+- [x] Add tests with a broken local Markdown link, mismatched convention indexes, and a valid document pair. Use a temporary fixture tree, not modifications to repository docs.
+- [x] Add a temporary Git fixture: force-stage a synthetic `.sqlite` file and an export under `ynab-export/`; expect rejection even though ignored. A generated synthetic JSON fixture under `tests/fixtures/` passes. Use `git ls-files -z` and argument arrays, never shell interpolation. Test staged mode and complete tracked-file mode.
+- [x] Add boundary fixtures: domain importing SQLite, filesystem, network, or CLI must fail; application importing concrete storage fails; `src/bootstrap.ts` wiring passes. Test relative paths, aliases, re-exports, and dynamic imports; reject computed dynamic imports in restricted modules.
+- [x] Run `npm test -- tests/policy/docs.test.ts tests/policy/private-files.test.ts tests/policy/boundaries.test.ts`; expect the planned violations to be missed before implementing checks. Implement checks with TypeScript AST/module resolution for imports, not text matching alone.
+- [x] Keep the existing script names `check:documents`, `check:tracked`, `check:format`, and `lint`; add `check:boundaries`. `check:tracked` checks tracked names and preserves its existing candidate scan by default. Retain the installed secret scan; staged-blob and history scanning come in Task 12. The full `check` runner invokes available checks sequentially and fails on the first nonzero exit. Skip no installed check silently.
+- [x] Run the focused suite, all new commands, and typecheck. Expect pass. Record docs/policy checks as active only after this succeeds.
+- [x] Commit: `chore: enforce source and private-data boundaries`.
 
 ### Task 3 — Port focused SuChef lint rules
 

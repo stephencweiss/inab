@@ -38,8 +38,24 @@ export function listCandidateFiles(root: string): readonly string[] {
     .filter((file) => file !== "");
 }
 
-export function blockedCandidateFiles(root: string): readonly string[] {
-  return listCandidateFiles(root).filter((file) => blockedTrackedPath(file) !== null);
+export type FileSelection = "candidates" | "tracked" | "staged";
+
+export function listSelectedFiles(root: string, selection: FileSelection): readonly string[] {
+  if (selection === "candidates") return listCandidateFiles(root);
+  const args =
+    selection === "staged"
+      ? ["diff", "--cached", "--name-only", "--diff-filter=d", "-z", "--"]
+      : ["ls-files", "--cached", "-z", "--"];
+  return execFileSync("/usr/bin/git", args, { cwd: root, encoding: "utf8" })
+    .split("\0")
+    .filter((file) => file !== "");
+}
+
+export function blockedCandidateFiles(
+  root: string,
+  selection: FileSelection = "candidates",
+): readonly string[] {
+  return listSelectedFiles(root, selection).filter((file) => blockedTrackedPath(file) !== null);
 }
 
 function environmentReason(filePath: string): string | null {

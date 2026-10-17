@@ -39,3 +39,20 @@ Checked exact package metadata through the [official npm registry](https://regis
 `npm audit` reports 4 moderate development-dependency findings through `drizzle-kit -> @esbuild-kit/esm-loader -> @esbuild-kit/core-utils -> esbuild`. They refer to [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99), which concerns the esbuild development server. The selected stable Kit still includes that dependency. No development server is started. No forced downgrade or dependency override was applied. The runtime dependency installation reported zero vulnerabilities.
 
 Task 2 and all persistent data workflows remain open. No Task 1 commit was made because the tool baseline is existing user work.
+
+
+## October 17, 2026 — Task 2
+
+Scope: document fixtures, private-path checks, source import boundaries, and the sequential full-check runner. No account operation is added. The user accepted the four development-dependency audit findings and authorized Task 2.
+
+- Reused the existing temporary document tests under `tests/policy/docs.test.ts`. All four cases passed before changes; no missing document behavior was claimed.
+- Red: the required three-file policy command found the missing boundary checker and a staged-mode failure: a previously committed private path was incorrectly included in the staged set. With an empty boundary-check skeleton, 21 forbidden dependency cases failed as expected. Runner tests found the missing runner module.
+- Additional red cases: three cross-domain imports passed incorrectly; a staged private-path type change was missed. The focused tests confirmed those failures before the fixes.
+- Green: TypeScript AST and module resolution enforce domain, application, and CLI imports, including aliases, re-exports, import types, and dynamic imports. Computed imports and unresolved dependencies fail in restricted modules. Domain modules import their own directory and shared helpers only. `src/bootstrap.ts` owns composition.
+- Private checks retain the default candidate scan and add explicit `--staged` and `--tracked` modes. Temporary Git fixtures verify force-staged ignored files, NUL-delimited names, generated synthetic JSON, staged type changes, and deletions. The existing secret-scanner candidate API is unchanged.
+- The full runner runs every current check in order and stops with the first failure. Tests verify the failure status and that later checks do not run.
+- Verification: `npm test -- tests/policy/docs.test.ts tests/policy/private-files.test.ts tests/policy/boundaries.test.ts` passed. `npm run check` passed, including document, private-path, boundary, format, lint, type, test, secret, and build checks. Final results: 12 test files and 86 tests passed. The required three-file policy command passed all 35 tests. The TypeScript runner needed broader local execution access for its IPC socket; no external service was used.
+
+- Independent specification and code quality reviews approved Task 2 with no material findings. The lead agent also ran the full check: 12 test files and 86 tests passed, with all checks and the build passing.
+
+Task 2 is complete. The task commit is `chore: enforce source and private-data boundaries`. Later account workflows remain open.

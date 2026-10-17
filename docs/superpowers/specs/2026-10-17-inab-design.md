@@ -55,6 +55,8 @@ Keep four boundaries within the application:
 3. Connections and imports: YNAB CSV, Plaid, Amazon, and the optional local model.
 4. Interfaces: terminal first, web later. Both call the same application operations.
 
+Pure account rules live in `src/accounts/`; budget rules live in `src/budget/`; shared pure helpers live in `src/lib/`. Each domain directory imports its own rules and `src/lib/`; shared helpers import only other shared helpers. Application operations depend on these rules and application-owned ports. Concrete storage stays in `src/storage/`. `src/bootstrap.ts` is the sole composition module that connects operations and storage. The CLI calls operations through this module and does not import concrete storage or database drivers. The import boundary check enforces these source dependencies, including aliases and relative paths.
+
 Start with explicit commands and interactive prompts, not a full terminal screen framework. Avoid a separate API service, queue service, and hosted database. Plaid and Amazon login may open a browser before the product has a web budgeting interface.
 
 The budget currency is USD, confirmed October 17, 2026. Store monetary values as integer cents with an explicit currency; reject unsupported currency combinations. Never use floating-point arithmetic for budget totals. Keep imported text and provider amounts so conversions can be checked.

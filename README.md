@@ -15,7 +15,7 @@ Start with the [document guide](docs/README.md), [project design](docs/superpowe
 - [Define explicit values and validate inputs](docs/conventions/interfaces.md)
 - [Avoid redundant types and unsafe casts](docs/conventions/type-inference.md)
 - [Document constraints without repeating code](docs/conventions/jsdoc.md)
-- [Place helpers and enforce module boundaries](docs/conventions/utilities.md)
+- [Place helpers and check module boundaries](docs/conventions/utilities.md)
 - [Keep database operations safe and atomic](docs/conventions/database-access-rules.md)
 - [Review migrations and verify recovery](docs/conventions/database-schema.md)
 - [Document and verify working user workflows](docs/conventions/feature-map.md)
