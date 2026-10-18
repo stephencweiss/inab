@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1792271560973,
+      "tag": "0000_manual_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792271567958,
+      "tag": "0001_reconciliation_account_guard",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+# Household data and local credentials
+/ynab-export/
+/data/
+/backups/
+/private/
+/browser-profiles/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.log
+
+# Local dependencies and generated output
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.eslintcache
+*.tsbuildinfo
+.DS_Store
