@@ -23,7 +23,7 @@ function setup() {
   );
   return { run, id: String(JSON.parse(account.stdout).account.id) };
 }
-it("adds and corrects signed observations with qualified last known output", () => {
+it("adds dated observations with qualified last known output without summing them", () => {
   const { run, id } = setup();
   expect(run("account", "show", id).stdout).toContain("no balance recorded");
   const first = run(
@@ -52,10 +52,26 @@ it("adds and corrects signed observations with qualified last known output", () 
     "--json",
   );
   expect(second.status).toBe(0);
-  const snapshot = JSON.parse(second.stdout).snapshot;
   const show = run("account", "show", id);
   expect(show.stdout).toContain("last known USD 5200.00 on 2026-10-16 | manual");
   expect(show.stdout).not.toContain("10200");
+});
+it("guides a same-date conflict to an explicit signed correction", () => {
+  const { run, id } = setup();
+  const added = run(
+    "snapshot",
+    "add",
+    "--account",
+    id,
+    "--as-of",
+    "2026-10-16",
+    "--balance",
+    "5200",
+    "--confirm",
+    "--json",
+  );
+  expect(added.status).toBe(0);
+  const snapshot = JSON.parse(added.stdout).snapshot;
   const duplicate = run(
     "snapshot",
     "add",
