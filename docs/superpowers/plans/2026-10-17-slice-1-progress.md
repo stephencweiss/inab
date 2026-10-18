@@ -253,3 +253,15 @@ Scope: runnable synthetic demo, security evidence, final review, and Slice 1 sta
 - Current changes were verified on macOS and remain local. The existing CI workflow is configured; the current changes have not run on Linux. Main branch protection remains absent. The four accepted moderate development-dependency findings remain unchanged. No push, remote settings change, live provider call, or household-data operation occurred.
 
 Task 13 is complete. The task commit is `docs: record Slice 1 demo and verification`. Slice 1 is ready for user manual review through `docs/slice-1-demo.md`. Keep the branch and workspace for that review. Do not plan or start Slice 2 until the user reviews this result.
+
+
+## October 18, 2026 — CI timeout diagnosis and correction
+
+Scope: separate independent snapshot cases and mapped workflows so CLI startup cost does not consume one shared test budget. No application behavior or timeout value changed.
+
+- GitHub run 39088030962 at commit c33dd92 reported 337 passing tests and two timeout failures. The nine-command snapshot case took 5,710 ms against the five-second default. The map grouped five independent workflows and 64 CLI commands in one test; it took 40,790 ms against its 30-second limit. No balance, storage, or workflow assertion failure was reported.
+- The unchanged focused tests passed locally: 16 tests in 41.80 seconds, with snapshot at 3,422 ms and the combined map at 29,551 ms. A temporary preload outside the repository added 200 ms only to each CLI process startup. This reproduced both failures before the change: snapshot at 5,396 ms and map at 40,618 ms. The preload is not part of source, configuration, or CI.
+- Snapshot addition/display and same-date conflict/correction now have separate temporary fixtures and six CLI commands each. The map registers each complete validated workflow as its own test. All original assertions, 64 mapped commands, expected exits, visible signals, capture guards, and cleanup remain. The five-second default, ten-second child limit, 30-second workflow limit, and one-worker setting are unchanged.
+- With the same startup delay, all 21 focused tests passed in 57.58 seconds. Snapshot cases took 3,599 ms and 3,669 ms; the longest mapped workflow took 12,170 ms. Independent review found no material issue or lost assertion.
+- Final normal `npm run check` passed documents, private paths, boundaries, formatting, lint, types, all 34 test files and 344 tests, secrets, and build. The test phase took 101.39 seconds. Unrelated package ordering, the local quality-gates plan, and the local demo script were preserved and excluded from the commit.
+- The change will update PR #1. The new Linux run result will be recorded on that pull request after publication. User manual review remains open.

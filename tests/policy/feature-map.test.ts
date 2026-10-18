@@ -166,11 +166,9 @@ function captureVariables(
     variables.set("revision", String(captured.revision));
   }
 }
-it("validates the hand-authored account map and executes its exact terminal commands", () => {
-  const workflows = parseMap(
-    JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.json"), "utf8")),
-  );
-  for (const workflow of workflows) {
+it.each(parseMap(JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.json"), "utf8"))))(
+  "executes validated workflow $id through its exact terminal commands",
+  (workflow) => {
     const fixture = temporaryDatabase();
     const variables = new Map([
       ["database", fixture.path],
@@ -201,8 +199,9 @@ it("validates the hand-authored account map and executes its exact terminal comm
     } finally {
       fixture.cleanup();
     }
-  }
-}, 30_000);
+  },
+  30_000,
+);
 it("rejects bad structure, duplicate workflow IDs, and broken source references", () => {
   const valid = {
     id: "terminal.accounts.manage",
