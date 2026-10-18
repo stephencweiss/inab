@@ -60,12 +60,14 @@ import { spawnSync } from "node:child_process";
 const project = ${JSON.stringify(project)};
 const name = process.argv[3];
 let result;
-if (name === "check:quick") {
+if (name === "check:quick" || name === "check:commit") {
   const command = JSON.parse(readFileSync(project + "/package.json", "utf8")).scripts[name];
   result = spawnSync("/bin/sh", ["-c", command], { stdio: "inherit" });
-} else if (name === "check:documents" || name === "lint") {
+} else if (name === "check:documents" || name === "lint" || name === "typecheck" || name === "test:unit") {
   console.log(name);
   process.exit(0);
+} else if (name === "check:commit-state") {
+  result = spawnSync(process.execPath, ["--import", ${JSON.stringify(import.meta.resolve("tsx"))}, project + "/scripts/check-git-state.ts", "commit"], { stdio: "inherit" });
 } else if (name === "check:tracked" || name === "check:secrets") {
   const file = name === "check:tracked" ? "check-tracked-paths.ts" : "check-secrets.ts";
   result = spawnSync(process.execPath, ["--import", ${JSON.stringify(import.meta.resolve("tsx"))}, project + "/scripts/" + file, ...process.argv.slice(4).filter((argument) => argument !== "--")], { stdio: "inherit" });
@@ -74,7 +76,8 @@ process.exit(result.status ?? 1);
 `,
   );
   chmodSync(shim, 0o700);
-  writeFileSync(path.join(root, "package.json"), '{"type":"module"}');
+  stage(root, "package.json", '{"type":"module"}');
+  git(root, ["add", "--", "npm"]);
   return spawnSync("/bin/sh", ["-c", readFileSync(".husky/pre-commit", "utf8")], {
     cwd: root,
     encoding: "utf8",
