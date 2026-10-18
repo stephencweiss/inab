@@ -14,6 +14,7 @@ The latest user instruction takes precedence over repository guidance. State unr
 
 - [Maintain convention files and indexes](docs/conventions/writing-conventions.md)
 - [Test executable behavior before implementation](docs/conventions/red-green-development.md)
+- [Run local Git quality checks](docs/conventions/git-quality-checks.md)
 - [Define complete values and validate inputs](docs/conventions/interfaces.md)
 - [Use inferred types and safe guards](docs/conventions/type-inference.md)
 - [Document constraints and check comment forms](docs/conventions/jsdoc.md)
@@ -24,6 +25,8 @@ The latest user instruction takes precedence over repository guidance. State unr
 - [Protect private data and bound agent work](docs/conventions/agent-safety.md)
 
 ## Working practices
+
+- Before changing hooks, CI, or publication checks, read `docs/conventions/git-quality-checks.md`.
 
 - Before changing conventions, read `docs/conventions/writing-conventions.md` and update both convention indexes.
 - Before code changes, read the relevant interface, type, helper, and comment conventions.

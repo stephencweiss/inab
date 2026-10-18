@@ -19,6 +19,7 @@ Status: Slice 1 is implemented and pending user manual review. Next: run the man
 | [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, correction review, Tracking snapshot, and recovery steps with synthetic execution checks |
 | [Verification plan](verification.md) | Required evidence, planned checks, and current enforcement status |
 | [Convention adoption decision](decisions/2026-10-17-agent-conventions.md) | What we adopted from SuChef and what we changed |
+| [Local Git quality decision](decisions/2026-10-18-local-quality-gates.md) | Commit and push checks, revision matching, and remote enforcement limits |
 
 The root README and AGENTS files index working conventions. Future implementation plans describe tasks; they do not redefine product rules. Historical files and external source documents are reference material.
 

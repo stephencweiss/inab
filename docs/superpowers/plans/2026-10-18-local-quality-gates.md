@@ -16,7 +16,7 @@ This plan follows the user's request to adapt the quality improvements in [SuChe
 
 Read `README.md`, `docs/README.md`, `docs/verification.md`, and these conventions before implementation: `writing-conventions.md`, `red-green-development.md`, `interfaces.md`, `type-inference.md`, `utilities.md`, `jsdoc.md`, and `agent-safety.md`, all under `docs/conventions/`.
 
-The proposed policy for this change is:
+The accepted policy for this change is:
 
 - Keep the current staged private-path and secret checks. Run them before the Git-state guard, so unsafe index contents are still detected when the working copy differs.
 - Require no unstaged tracked changes and no unignored untracked files before commit checks. Staged changes are expected. This simple rule lets working-file lint, types, and tests check the index content. Do not auto-stage, stash, reset, or delete user work.
@@ -25,7 +25,7 @@ The proposed policy for this change is:
 - Keep automatic CI. Do not change remote settings, merge policy, visibility, account plan, or branch protection. The protection gap remains a separate task.
 - Keep one full CI job. Do not add browsers, Docker, credentials, another scanner, or application features.
 
-The clean-state rule is a proposed implementation choice in this plan. Record it as accepted only when implementation proceeds with this scope.
+The clean-state rule was accepted when the user requested implementation of this plan. The decision record owns the accepted policy.
 
 ## Files and responsibilities
 
@@ -61,41 +61,41 @@ Current planning baseline: branch `codex/slice-1-manual-accounts`, commit `c33dd
 
 **Files:** `package.json`, `.husky/pre-commit`, `scripts/check-git-state.ts`, `scripts/checks/git-state.ts`, `tests/policy/git-quality-gates.test.ts`, `tests/policy/secrets.test.ts`.
 
-- [ ] Build a synthetic temporary Git fixture with local user identity, real installed Husky, the real hook files, and a local command recorder. Use fixed harmless content. Initialize Husky through the installed package, rather than just executing the hook file as a shell script.
-- [ ] Write tests that invoke real `git commit` and prove: a clean staged change succeeds; unstaged changes and unignored untracked files stop it; ignored files do not stop it; each failed child check stops later commands; the index and working files remain unchanged; and a rejected commit leaves `HEAD` unchanged. Test an initial commit as well as an existing `HEAD`.
-- [ ] Retain tests that detect unsafe staged content even when the working file is clean. Extend the existing secret-test fixture to recognize new commands without silently treating unrecognized commands as successful.
-- [ ] Run `npm test -- tests/policy/git-quality-gates.test.ts tests/policy/secrets.test.ts`. Confirm the new tests fail for missing gate behavior, not broken fixture setup.
-- [ ] Add `test:unit` as `vitest run tests/unit`. Keep `test` unchanged so the full check still includes unit, policy, integration, and CLI tests. The commit subset is deliberately unit-only; measure its duration rather than promise a time limit.
-- [ ] Implement commit-state validation with Git argument arrays. Use `git diff --quiet --ignore-submodules=none` and NUL-delimited untracked-path output. Distinguish a difference from a Git command error; both fail, with an appropriate message. Do not split file names on whitespace.
-- [ ] Define `check:commit` in this exact order: document check; staged private-path check; staged secret scan; commit-state guard; lint; typecheck; unit tests. Commands stop at the first failure. Make `check:quick` an alias for `npm run check:commit` and have `.husky/pre-commit` run `npm run check:commit`.
-- [ ] Run the focused tests again. Confirm a missing child command, spawn error, or nonzero status cannot become success. Run `npm run typecheck` and `npm run lint`. Format changed files.
-- [ ] Stage only this task's files and commit with `feat: check types and unit tests before commits`. Let the new hook run. Update task checkboxes before staging; leave no task edits unstaged during the commit.
+- [x] Build a synthetic temporary Git fixture with local user identity, real installed Husky, the real hook files, and a local command recorder. Use fixed harmless content. Initialize Husky through the installed package, rather than just executing the hook file as a shell script.
+- [x] Write tests that invoke real `git commit` and prove: a clean staged change succeeds; unstaged changes and unignored untracked files stop it; ignored files do not stop it; each failed child check stops later commands; the index and working files remain unchanged; and a rejected commit leaves `HEAD` unchanged. Test an initial commit as well as an existing `HEAD`.
+- [x] Retain tests that detect unsafe staged content even when the working file is clean. Extend the existing secret-test fixture to recognize new commands without silently treating unrecognized commands as successful.
+- [x] Run `npm test -- tests/policy/git-quality-gates.test.ts tests/policy/secrets.test.ts`. Confirm the new tests fail for missing gate behavior, not broken fixture setup.
+- [x] Add `test:unit` as `vitest run tests/unit`. Keep `test` unchanged so the full check still includes unit, policy, integration, and CLI tests. The commit subset is deliberately unit-only; measure its duration rather than promise a time limit.
+- [x] Implement commit-state validation with Git argument arrays. Use `git diff --quiet --ignore-submodules=none` and NUL-delimited untracked-path output. Distinguish a difference from a Git command error; both fail, with an appropriate message. Do not split file names on whitespace.
+- [x] Define `check:commit` in this exact order: document check; staged private-path check; staged secret scan; commit-state guard; lint; typecheck; unit tests. Commands stop at the first failure. Make `check:quick` an alias for `npm run check:commit` and have `.husky/pre-commit` run `npm run check:commit`.
+- [x] Run the focused tests again. Confirm a missing child command, spawn error, or nonzero status cannot become success. Run `npm run typecheck` and `npm run lint`. Format changed files.
+- [x] Stage only this task's files and commit with `feat: check types and unit tests before commits`. Let the new hook run. Update task checkboxes before staging; leave no task edits unstaged during the commit.
 
 ## Task 2: Add the push gate with failing tests first
 
 **Files:** `.husky/pre-push`, `package.json`, `scripts/check-git-state.ts`, `scripts/checks/git-state.ts`, `tests/policy/git-quality-gates.test.ts`.
 
-- [ ] Add real `git push` tests against a new temporary bare remote. Record remote refs before and after each rejected push. Test successful current-HEAD publication and failures in each check command.
-- [ ] Add cases for staged changes, unstaged changes, unignored untracked files, ignored files, pushing a non-HEAD tip, multiple ref updates, deletion-only pushes, mixed deletion/update pushes, malformed hook input, and an unavailable required executable. Use a temporary `node_modules` arrangement for the missing-executable case; do not alter project dependencies.
-- [ ] Test parsing of Git's four-field pre-push records. Accept valid full hexadecimal object IDs of the repository's object format; reject incomplete records, invalid refs, malformed IDs, and inconsistent lengths. A zero local ID denotes deletion. Validate records before deciding that no checks are needed. Empty stdin is a no-op for the hook entry point.
-- [ ] Run `npm test -- tests/policy/git-quality-gates.test.ts` and confirm failure for missing push behavior.
-- [ ] Implement the push guard. Read hook records from stdin. Require every non-deletion local object ID to equal current `HEAD`. For any update, reject dirty state using NUL-delimited `git status --porcelain=v1 -z --untracked-files=all --ignore-submodules=none`. Deletion-only input skips the suite. Reject malformed input without running checks.
-- [ ] After valid update input, invoke `npm run check:push` and preserve failure status. Pass inherited hook stdin only to the parser, not to child checks. Bound Git calls and the overall child run with explicit timeouts. Print no file contents or secret values.
-- [ ] Define `check:push` as the clean-state guard followed by `npm run check`, tracked private-path scan, tracked secret scan, staged secret scan, and history secret scan, in that order. Use existing scanner entry points and modes from `docs/verification.md`. The direct command must require a clean state even when not invoked by Git. It checks local `HEAD`; the hook additionally checks the pushed refs. Avoid recursion: the guard's direct clean-state mode does not dispatch `check:push`.
-- [ ] Have `.husky/pre-push` invoke the local TypeScript executable and the entry point in push mode. Keep the commit and push entry paths explicit. Tests must fail if dependencies are missing; do not auto-install or skip checks.
-- [ ] Ensure publication refuses a shallow repository before the history scan. Document that a complete local history scan covers local refs only; it cannot inspect unavailable remote refs. Do not fetch or rewrite history automatically.
-- [ ] Test real `git commit --no-verify` and `git push --no-verify` with harmless fixtures that otherwise fail the gates. Confirm bypass works and leaves no project remote changed. Add fixture timeouts and cleanup in `finally`/`afterEach`; do not run the full real suite recursively from hook tests. Use recorder commands to prove hook dispatch and ordering.
-- [ ] Run the focused gate and secret tests, typecheck, and lint. Stage this task's files and commit with `feat: run publication checks before pushes`.
+- [x] Add real `git push` tests against a new temporary bare remote. Record remote refs before and after each rejected push. Test successful current-HEAD publication and failures in each check command.
+- [x] Add cases for staged changes, unstaged changes, unignored untracked files, ignored files, pushing a non-HEAD tip, multiple ref updates, deletion-only pushes, mixed deletion/update pushes, malformed hook input, and an unavailable required executable. Use a temporary `node_modules` arrangement for the missing-executable case; do not alter project dependencies.
+- [x] Test parsing of Git's four-field pre-push records. Accept valid full hexadecimal object IDs of the repository's object format; reject incomplete records, invalid refs, malformed IDs, and inconsistent lengths. A zero local ID denotes deletion. Validate records before deciding that no checks are needed. Empty stdin is a no-op for the hook entry point.
+- [x] Run `npm test -- tests/policy/git-quality-gates.test.ts` and confirm failure for missing push behavior.
+- [x] Implement the push guard. Read hook records from stdin. Require every non-deletion local object ID to equal current `HEAD`. For any update, reject dirty state using NUL-delimited `git status --porcelain=v1 -z --untracked-files=all --ignore-submodules=none`. Deletion-only input skips the suite. Reject malformed input without running checks.
+- [x] After valid update input, invoke `npm run check:push` and preserve failure status. Pass inherited hook stdin only to the parser, not to child checks. Bound Git calls and the overall child run with explicit timeouts. Print no file contents or secret values.
+- [x] Define `check:push` as the clean-state guard followed by `npm run check`, tracked private-path scan, tracked secret scan, staged secret scan, and history secret scan, in that order. Use existing scanner entry points and modes from `docs/verification.md`. The direct command must require a clean state even when not invoked by Git. It checks local `HEAD`; the hook additionally checks the pushed refs. Avoid recursion: the guard's direct clean-state mode does not dispatch `check:push`.
+- [x] Have `.husky/pre-push` invoke the local TypeScript executable and the entry point in push mode. Keep the commit and push entry paths explicit. Tests must fail if dependencies are missing; do not auto-install or skip checks.
+- [x] Ensure publication refuses a shallow repository before the history scan. Document that a complete local history scan covers local refs only; it cannot inspect unavailable remote refs. Do not fetch or rewrite history automatically.
+- [x] Test real `git commit --no-verify` and `git push --no-verify` with harmless fixtures that otherwise fail the gates. Confirm bypass works and leaves no project remote changed. Add fixture timeouts and cleanup in `finally`/`afterEach`; do not run the full real suite recursively from hook tests. Use recorder commands to prove hook dispatch and ordering.
+- [x] Run the focused gate and secret tests, typecheck, and lint. Stage this task's files and commit with `feat: run publication checks before pushes`.
 
 ## Task 3: Document the INAB policy
 
 **Files:** `docs/conventions/git-quality-checks.md`, `README.md`, `AGENTS.md`, `docs/verification.md`, `docs/decisions/2026-10-18-local-quality-gates.md`.
 
-- [ ] Write the short convention with commit/push command lists, clean-state rules, exact-revision rule, setup, bypasses, failure recovery, and local-versus-remote limits. Tell users to select or save unrelated work themselves; no hook may do that for them. Mark controls active only after tests prove them.
-- [ ] Add matching convention entries in `README.md` and `AGENTS.md`: `Run local Git quality checks` linking to `docs/conventions/git-quality-checks.md`. Add required reading in `AGENTS.md` before changing hooks, CI, or publication checks. Keep index order identical.
-- [ ] Update `docs/verification.md` with actual commands, the unit-only commit subset, full push coverage, real hook evidence, and unchanged automatic CI triggers. Correct its old SuChef evidence paragraph to label the October 17 checkout as historical and link PR 24 for the later improvements.
-- [ ] Record the accepted local policy in the decision file. Explain why INAB keeps its existing scanners, SQLite tests, and automatic CI. State that remote merge enforcement remains pending; do not imply that a local hook makes CI required. Do not copy SuChef's advisory policy into INAB.
-- [ ] Run `npm run check:documents` and `npx prettier --check` with the exact changed document paths. Correct only those documents if formatting fails. Commit with `docs: define INAB local Git quality checks`.
+- [x] Write the short convention with commit/push command lists, clean-state rules, exact-revision rule, setup, bypasses, failure recovery, and local-versus-remote limits. Tell users to select or save unrelated work themselves; no hook may do that for them. Mark controls active only after tests prove them.
+- [x] Add matching convention entries in `README.md` and `AGENTS.md`: `Run local Git quality checks` linking to `docs/conventions/git-quality-checks.md`. Add required reading in `AGENTS.md` before changing hooks, CI, or publication checks. Keep index order identical.
+- [x] Update `docs/verification.md` with actual commands, the unit-only commit subset, full push coverage, real hook evidence, and unchanged automatic CI triggers. Correct its old SuChef evidence paragraph to label the October 17 checkout as historical and link PR 24 for the later improvements.
+- [x] Record the accepted local policy in the decision file. Explain why INAB keeps its existing scanners, SQLite tests, and automatic CI. State that remote merge enforcement remains pending; do not imply that a local hook makes CI required. Do not copy SuChef's advisory policy into INAB.
+- [x] Run `npm run check:documents` and `npx prettier --check` with the exact changed document paths. Correct only those documents if formatting fails. Commit with `docs: define INAB local Git quality checks`.
 
 ## Task 4: Final verification and review handoff
 
@@ -115,3 +115,12 @@ Current planning baseline: branch `codex/slice-1-manual-accounts`, commit `c33dd
 - Real Git/Husky tests use temporary local remotes and synthetic files. They never publish project code or inspect household storage.
 - Automatic CI, existing full-suite coverage, and the current application scope remain intact.
 - Documents distinguish active checks, local bypasses, and the unresolved remote merge requirement.
+
+## Implementation evidence
+
+- Baseline: `npm ci` and `npm run check` passed in the separate worktree; 339 tests passed before the gate changes.
+- Task 1: the first focused run had 12 expected failures for missing commit-gate behavior. The green run passed 26 focused tests. The real enabled commit hook passed 115 unit tests in 3.77 seconds. Commit: `d4dd22d`.
+- Task 2: both implementation reviews passed. The focused gate and staged-secret run passed 49 tests in 66.87 seconds. The real enabled commit hook passed 115 unit tests; the complete commit took 12.90 seconds. Commit: `8da230d`.
+- Task 3: `npm run check:documents` passed. `npx prettier --check` passed for the seven changed document paths, using Node.js 24.16.0. The documentation commit runs the real enabled commit hook. No final full-suite or direct `check:push` result is claimed here.
+
+The checks used temporary synthetic repositories and local remotes. No project code was published. Task 4 remains open for final checks and review.

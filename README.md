@@ -46,6 +46,7 @@ Opening corrections reject posted entries inside the new opening period. An open
 
 - [Maintain convention files and indexes](docs/conventions/writing-conventions.md)
 - [Test executable behavior before implementation](docs/conventions/red-green-development.md)
+- [Run local Git quality checks](docs/conventions/git-quality-checks.md)
 - [Define complete values and validate inputs](docs/conventions/interfaces.md)
 - [Use inferred types and safe guards](docs/conventions/type-inference.md)
 - [Document constraints and check comment forms](docs/conventions/jsdoc.md)
@@ -118,4 +119,4 @@ Restore preserves account IDs, entries, snapshots, revisions, audit history, and
 
 ## Verify changes
 
-Use `npm ci` to install the pinned dependencies. Run `npm run check` for documents, private paths, module boundaries, formatting, lint, types, all tests, current-file secrets, and the CLI build. The commit hook checks documents, staged private paths, staged secret contents, and lint. Before publishing, run the tracked, staged, and history secret checks in the [verification guide](docs/verification.md). Keep household data outside the repository.
+Use `npm ci` to install the pinned dependencies. Run `npm run check` for documents, private paths, module boundaries, formatting, lint, types, all tests, current-file secrets, and the CLI build. The commit hook checks documents, staged private paths, staged secret contents, matching working files, lint, types, and unit tests. The push hook runs `npm run check:push` for the full check and publication scans from a clean current revision. See the [Git quality convention](docs/conventions/git-quality-checks.md) and [verification guide](docs/verification.md). Keep household data outside the repository.
