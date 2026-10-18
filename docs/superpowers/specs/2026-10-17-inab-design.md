@@ -1,7 +1,7 @@
 # INAB project design and build roadmap
 
 Date: October 17, 2026
-Status: Draft for user review. This document records agreed scope and proposed build steps. It is not a detailed implementation plan.
+Status: Slice 1 is implemented and pending user manual review. This document records agreed scope and proposed later build steps. Slice 2 has not been planned or started.
 
 ## Purpose
 
@@ -254,7 +254,11 @@ Resolve later: recurring entries and targets, local model hardware, per-person w
 
 ## Next step
 
-Review the [Slice 1 implementation plan](../plans/2026-10-17-slice-1-manual-accounts.md), which defines tasks and checks for manual accounts, balances, reconciliation, and recovery. Use that working local account model as the foundation for Slice 2 imports and Slice 4 Plaid links. Local account management, manual transactions, registers, and Cash/Credit bank reconciliation are implemented. Reconciliation stores original evidence and derives current coverage from balance-relevant values. Corrections mark affected checks for review and preserve the old evidence. Tracking snapshot add/list/correct and dated last-known balances are implemented. Public backup/restore to new paths is implemented with current-schema validation, private exclusive publication, and source preservation.
+Run the [Slice 1 manual demo](../../slice-1-demo.md) with synthetic data and review the [security record](../../slice-1-security-checks.md). Check account balances, correction review, Tracking observations, and recovery before household use. Record the user review result and resolve any issue. The [Slice 1 implementation plan](../plans/2026-10-17-slice-1-manual-accounts.md) records the work and checks.
+
+Slice 1 is implemented; user manual review is pending. Current changes have not been pushed or run on Linux. CI configuration exists, and an older remote revision passed CI. Main branch protection is absent. Four accepted moderate development dependency findings remain; see the security record for scope and evidence.
+
+Do not start Slice 2 automatically. After the user reviews Slice 1, agree its import scope and write a separate implementation plan.
 
 ## References
 

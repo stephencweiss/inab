@@ -2,7 +2,9 @@
 
 A personal envelope-budgeting app for one household. Terminal first; protected family web access later.
 
-Status: local account creation, inspection, corrections, manual transaction registers, bank reconciliation, dated Tracking balances, and backup/restore to new paths work from the terminal. Private database initialization, migrations, and the check baseline are installed.
+Status: Slice 1 is implemented and pending user manual review. Local accounts, manual transactions, reconciliation and correction review, dated Tracking balances, and backup/restore work from the terminal. Private storage, migrations, and automated checks are installed.
+
+Next: run the [Slice 1 manual demo](docs/slice-1-demo.md) and review the [security check record](docs/slice-1-security-checks.md). Resolve any findings before household use. Slice 2 has not been planned or started.
 
 Run `npm run inab -- --help` for command status. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 

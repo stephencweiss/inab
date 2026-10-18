@@ -51,6 +51,8 @@ History mode scans unique path/blob pairs reachable from every local Git ref wit
 
 ## Completion evidence
 
+The [Slice 1 security check record](slice-1-security-checks.md) lists the commands run before the demo guide and the remaining remote and manual checks.
+
 For a behavior change, record the test that failed before the fix and passed after it. Run the relevant broader checks once the change is stable. Report the actual commands, results, and any remaining gap.
 
 For a docs-only change, check links, convention indexes, and consistency with the product design. Do not claim application tests passed when there is no application.

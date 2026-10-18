@@ -1,5 +1,7 @@
 # Slice 1: Manual Accounts Implementation Plan
 
+Status: Tasks 1–13 are implemented and verified locally. User manual review is pending; see the [demo guide](../../slice-1-demo.md) and [security check record](../../slice-1-security-checks.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A user can create local Cash, Credit, and Tracking accounts, record activity, reconcile Cash/Credit balances, and back up and restore the database without YNAB or Plaid.
@@ -14,7 +16,7 @@
 
 Read the [design](../specs/2026-10-17-inab-design.md), [manual-account decision](../../decisions/2026-10-17-manual-account-defaults.md), [conventions](../../../README.md), and [verification guide](../../verification.md). Those documents own product decisions. This plan supplies implementation choices and test cases; choices marked proposed are recommendations for this slice, not prior user decisions.
 
-The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit reconciliation and original balance evidence are implemented. Correction invalidation now preserves evidence and marks affected checks for review. Tracking snapshots and dated last-known account views are implemented. User recovery workflows remain planned. Do not initialize another repository, push, or copy SuChef application dependencies.
+The repository has an initial commit and the remote `https://github.com/stephencweiss/inab.git`. `.npmrc` selects the public npm registry. The check baseline is installed for Node.js 24.16.0: TypeScript, ESLint, Vitest, Prettier, Secretlint, a Husky hook, and GitHub Actions. `npm run check` is the full command. Custom lint rules live under `tools/eslint-plugin-*`, with tests in `tests/unit/`. Preserve those files and extend them. Drizzle, better-sqlite3, private storage initialization, and manual account management are installed. The account feature map is checked through real terminal commands. Manual transaction entry, correction, clearing, and registers are implemented. Cash/Credit reconciliation and original balance evidence are implemented. Correction invalidation now preserves evidence and marks affected checks for review. Tracking snapshots and dated last-known account views are implemented. Public backup and restore, staged and historical secret scans, and the synthetic demo are implemented. User manual review and required merge protection remain pending. Do not initialize another repository, push, or copy SuChef application dependencies.
 
 All paths below are relative to `/Users/sweiss/code/inab`. Use the current checkout unless execution needs isolation. Never read real YNAB exports for these tests. Use generated synthetic records and temporary database directories. Do not commit or publish private data. No remote creation, push, paid service, or deployment is part of this plan.
 
@@ -129,7 +131,7 @@ Before each task commit, run the listed focused checks plus `npm run lint` and `
 - [x] Write a subprocess test: `--help` exits 0, shows manual-account commands, and creates no database. An unknown command exits 2. Run `npm test -- tests/cli/help.test.ts`; expect failures for missing behavior, not a broken test runner.
 - [x] Implement help and error dispatch only. Use Node argument/readline facilities; do not add a UI framework.
 - [x] Run the same test, `npm run typecheck`, and `npm run build`; expect pass. Run `node dist/cli/main.js --help`; expect the same help.
-- [ ] Commit: `chore: establish terminal and test harness`.
+- [x] Commit: delivered in `c996a96` (tool baseline) and `c7ab646` (terminal help), using the actual commit titles rather than the proposed `chore: establish terminal and test harness`.
 
 ### Task 2 — Baseline rules and private-data checks
 
@@ -285,26 +287,26 @@ it("keeps pending purchases outside the cleared balance", () => {
 **Create:** `docs/slice-1-demo.md`; maintain `docs/superpowers/plans/2026-10-17-slice-1-progress.md`.
 **Modify:** README, docs index, feature map, design current-state/next-step sections.
 
-- [ ] Write a runnable demo using a newly created temporary directory and only synthetic data. Capture generated account IDs from JSON, not copied IDs. Show create → entries → mismatch → reconcile → correction → review flag → re-reconcile → snapshot → backup → restore.
-- [ ] Document exact commands, expected amounts, exit codes, and cancellation behavior. Feature-map verification runs these same workflows through real CLI processes. File references must exist, and mapped commands must produce the stated visible signals.
-- [ ] Run `npm ci`, `npm run check`, and the demo using the built CLI from outside the repository directory. Confirm no test opens `ynab-export/` or an unrequested database.
-- [ ] Request code review against the design and conventions using superpowers:requesting-code-review. Fix material findings with focused regression tests. Run final checks after the last code change using superpowers:verification-before-completion.
-- [ ] Record actual command results and limitations. Keep CI pending if no remote exists. Do not label later slices or scheduled Tracking updates complete.
-- [ ] Commit: `docs: record Slice 1 demo and verification`. Present the runnable result for user review before planning Slice 2.
+- [x] Write a runnable demo using a newly created temporary directory and only synthetic data. Capture generated account IDs from JSON, not copied IDs. Show create → entries → mismatch → reconcile → correction → review flag → re-reconcile → snapshot → backup → restore.
+- [x] Document exact commands, expected amounts, exit codes, and cancellation behavior. Feature-map verification runs these same workflows through real CLI processes. File references must exist, and mapped commands must produce the stated visible signals.
+- [x] Run `npm ci`, `npm run check`, and the demo using the built CLI from outside the repository directory. Confirm no test opens `ynab-export/` or an unrequested database.
+- [x] Request code review against the design and conventions using superpowers:requesting-code-review. Fix material findings with focused regression tests. Run final checks after the last code change using superpowers:verification-before-completion.
+- [x] Record actual command results and limitations. Keep CI pending if no remote exists. Do not label later slices or scheduled Tracking updates complete.
+- [x] Commit: `docs: record Slice 1 demo and verification`. Present the runnable result for user review before planning Slice 2.
 
 ## Completion checklist
 
-- [ ] Cash/Credit accounts work with no provider or imported history.
-- [ ] Account IDs remain stable after rename and opening corrections.
-- [ ] Signed balances, cents, dates, and cutoff rules pass meaningful edge cases.
-- [ ] Identical manual purchases remain separate.
-- [ ] Clearing, reconciliation, mismatches, and correction review work after restart.
-- [ ] Tracking balances are dated snapshots, not summed transactions.
-- [ ] Failed writes and stale confirmations leave no partial records.
-- [ ] Backup/restore preserves the complete record and never overwrites a live target.
-- [ ] Documented terminal workflows run against isolated synthetic data.
-- [ ] Local checks pass; CI and merge protection status are stated accurately.
-- [ ] No YNAB import, Plaid integration, envelope calculation, or web interface is claimed.
+- [x] Cash/Credit accounts work with no provider or imported history.
+- [x] Account IDs remain stable after rename and opening corrections.
+- [x] Signed balances, cents, dates, and cutoff rules pass meaningful edge cases.
+- [x] Identical manual purchases remain separate.
+- [x] Clearing, reconciliation, mismatches, and correction review work after restart.
+- [x] Tracking balances are dated snapshots, not summed transactions.
+- [x] Failed writes and stale confirmations leave no partial records.
+- [x] Backup/restore preserves the complete record and never overwrites a live target.
+- [x] Documented terminal workflows run against isolated synthetic data.
+- [x] Local checks pass; CI and merge protection status are stated accurately.
+- [x] No YNAB import, Plaid integration, envelope calculation, or web interface is claimed.
 
 ## Sources for implementation choices
 

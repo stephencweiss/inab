@@ -1,10 +1,14 @@
 # INAB document guide
 
+Status: Slice 1 is implemented and pending user manual review. Next: run the manual demo and review its results and the security record. Slice 2 has not been planned or started.
+
 ## Read these first
 
 | Document | Authority |
 | --- | --- |
 | [Project design](superpowers/specs/2026-10-17-inab-design.md) | Agreed product scope, proposed architecture, and build sequence |
+| [Slice 1 manual demo](slice-1-demo.md) | Runnable synthetic workflow, expected results, and user review checklist |
+| [Slice 1 security record](slice-1-security-checks.md) | Automated security evidence and current limits |
 | [Slice 1 implementation plan](superpowers/plans/2026-10-17-slice-1-manual-accounts.md) | Tasks and checks for manual accounts, reconciliation, Tracking snapshots, and recovery |
 | [Budget currency decision](decisions/2026-10-17-budget-currency.md) | Agreed USD budget |
 | [Manual-account defaults decision](decisions/2026-10-17-manual-account-defaults.md) | Agreed opening balance and reconciliation defaults |
