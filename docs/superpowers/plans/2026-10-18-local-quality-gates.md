@@ -99,11 +99,11 @@ Current planning baseline: branch `codex/slice-1-manual-accounts`, commit `c33dd
 
 ## Task 4: Final verification and review handoff
 
-- [ ] Run `npm run check` once after the last behavior change. Record actual test counts and duration, not historical counts. If the subsequent documentation task changed no behavior, keep this evidence rather than rerunning without cause.
-- [ ] From a clean committed branch, run `npm run check:push`. This proves the actual publication command with all suites and scans. Use this run as the final full-check evidence if it supersedes the previous step; avoid redundant runs where possible.
-- [ ] Review the branch diff against its recorded starting commit. Confirm no demo changes, product changes, secrets, private files, remote settings, or CI-trigger changes entered the branch.
-- [ ] Record focused red/green evidence, final command results, runtime, test duration, and remaining remote/manual gaps in the PR description or handoff. Do not label unrun remote CI as passed.
-- [ ] Leave the branch and worktree available for review. Report the worktree path and branch. Do not merge, push, or open a PR as part of this plan-only request; obtain further user direction for publication.
+- [x] Run `npm run check` once after the last behavior change. Record actual test counts and duration, not historical counts. If the subsequent documentation task changed no behavior, keep this evidence rather than rerunning without cause.
+- [x] From a clean committed branch, run `npm run check:push`. This proves the actual publication command with all suites and scans. Use this run as the final full-check evidence if it supersedes the previous step; avoid redundant runs where possible.
+- [x] Review the branch diff against its recorded starting commit. Confirm no demo changes, product changes, secrets, private files, remote settings, or CI-trigger changes entered the branch.
+- [x] Record focused red/green evidence, final command results, runtime, test duration, and remaining remote/manual gaps in the PR description or handoff. Do not label unrun remote CI as passed.
+- [x] Leave the branch and worktree available for review. Report the worktree path and branch. Do not merge, push, or open a PR as part of this plan-only request; obtain further user direction for publication.
 
 ## Acceptance checks
 
@@ -121,6 +121,12 @@ Current planning baseline: branch `codex/slice-1-manual-accounts`, commit `c33dd
 - Baseline: `npm ci` and `npm run check` passed in the separate worktree; 339 tests passed before the gate changes.
 - Task 1: the first focused run had 12 expected failures for missing commit-gate behavior. The green run passed 26 focused tests. The real enabled commit hook passed 115 unit tests in 3.77 seconds. Commit: `d4dd22d`.
 - Task 2: both implementation reviews passed. The focused gate and staged-secret run passed 49 tests in 66.87 seconds. The real enabled commit hook passed 115 unit tests; the complete commit took 12.90 seconds. Commit: `8da230d`.
-- Task 3: `npm run check:documents` passed. `npx prettier --check` passed for the seven changed document paths, using Node.js 24.16.0. The documentation commit runs the real enabled commit hook. No final full-suite or direct `check:push` result is claimed here.
+- Task 3: `npm run check:documents` passed. `npx prettier --check` passed for the seven changed document paths, using Node.js 24.16.0. Commit `93981d8` passed the real enabled commit hook, including 115 unit tests in 3.80 seconds.
 
-The checks used temporary synthetic repositories and local remotes. No project code was published. Task 4 remains open for final checks and review.
+- Task 4: `npm run check:push` passed with exit code 0 from clean revision `93981d8f27144e5915131cbbcf86d71eef1fc077`, using Node.js 24.16.0 and npm 11.13.0. All 35 test files and 379 tests passed in 149.60 seconds. The ordered full check passed documents, private paths, module boundaries, formatting, lint, types, all tests, current-file secrets, and the build. The subsequent tracked private-path check and tracked, staged, and history secret scans also passed. This run supplies the final full-check evidence without a separate repeat of `npm run check`.
+- Final review approved the whole branch with no Critical or Important findings. The starting-commit-to-HEAD diff and whitespace checks passed. No demo, application, remote-setting, or CI-trigger changes entered the branch. The original checkout was unchanged.
+- This final completion update changes only the plan. Document and format checks and the enabled commit hook verify this update. The full-suite evidence above applies to the unchanged executable code.
+
+The checks used temporary synthetic repositories and local remotes. No project code was published. Remote CI was not run or verified by this work. No push, merge, or PR creation is claimed. Required remote merge enforcement and the existing manual Slice 1 review remain separate tasks.
+
+The review worktree remains at `/Users/sweiss/.codex/worktrees/inab-quality-gates/inab`, on branch `codex/inab-quality-gates`.
