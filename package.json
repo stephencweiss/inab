@@ -14,7 +14,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check:quick": "npm run check:documents && npm run check:tracked && npm run lint",
+    "check:quick": "npm run check:documents && npm run check:tracked -- --staged && npm run check:secrets -- --staged && npm run lint",
     "check": "tsx scripts/check.ts",
     "prepare": "husky",
     "inab": "tsx src/cli/main.ts",

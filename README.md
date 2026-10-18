@@ -113,3 +113,7 @@ Public recovery requires the current schema. Older, newer, or unknown migration 
 Successful JSON results include the operation ID, source, destination, schema version, and `migrationNeeded: false`. A missing source exits with code 3. Invalid paths, existing destinations, and unsupported files exit with code 2. Unexpected failures exit with code 1 and report the operation ID and destination for inspection before a retry. Commands do not retry automatically.
 
 Restore preserves account IDs, entries, snapshots, revisions, audit history, and reconciliation evidence and review states. It creates a separate database and does not switch later commands to it. Inspect the restored copy, then select its path explicitly with `--db`.
+
+## Verify changes
+
+Use `npm ci` to install the pinned dependencies. Run `npm run check` for documents, private paths, module boundaries, formatting, lint, types, all tests, current-file secrets, and the CLI build. The commit hook checks documents, staged private paths, staged secret contents, and lint. Before publishing, run the tracked, staged, and history secret checks in the [verification guide](docs/verification.md). Keep household data outside the repository.

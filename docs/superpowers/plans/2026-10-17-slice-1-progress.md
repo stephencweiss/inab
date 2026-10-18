@@ -222,3 +222,18 @@ Scope: private backup and restore to new paths, strict public current-schema val
 - Final lead-agent `npm run check` passed document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 33 test files and 329 tests. The test phase took 73.63 seconds. No test or process timeout changed. No external service or household data was used.
 
 Task 11 is complete. The task commit is `feat: back up and restore local account data`. Task 12 remains open. The four accepted development-dependency audit findings remain unchanged.
+
+
+## October 17, 2026 — Task 12 implementation
+
+Scope: staged and historical secret scanning, quick hook checks, runner failure propagation, and verified CI configuration.
+
+- Red: the old scanner missed staged content hidden by a clean working file, tracked lockfile contents, and deleted historical contents. The old hook allowed unsafe staged content. A candidate scan followed a symbolic link to an external synthetic fixture. These failures now have regression coverage.
+- Green: 18 focused policy tests passed in 6.51 seconds. Tests use temporary Git repositories and invalid markers without valid credential bytes. Added, modified, renamed, and deleted paths, spaces and newlines, actual index blobs, historical deletion, missing scanner/preset on empty selections, and hook stop order are covered. A subprocess test verifies that the full check entry point forwards exit 7 and stops before later checks.
+- Secretlint and its recommended preset remain pinned at 13.0.7. Explicit staged and tracked modes read Git index blobs. History mode scans reachable historical path/blob pairs with the same scanner. Candidate reads refuse symbolic links. Failures are clear and secret output is masked. The hook retains document checks and lint and now checks staged private paths and staged secret contents.
+- Both independent reviews approved Task 12. Lint, types, formatting, document, and whitespace checks passed. The candidate secret scan passed in 0.31 seconds before the final full check.
+- Lead-agent `npm ci` recreated the pinned tree: 250 packages installed and 251 audited. The four accepted moderate development-dependency findings are unchanged. Node is 24.16.0 and npm is 11.13.0. Husky installation succeeded and Git uses `.husky/_`.
+- Lead-agent `npm run check` passed all document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 34 files and 339 tests, with an 81.43-second test phase. No test or process timeout changed.
+- The existing GitHub workflow already meets the plan: PR and main triggers, read-only permissions, pinned action commits, Node 24.16.0, npm ci, and the full check. Read-only GitHub inspection found main as the default branch, no classic branch protection, and no effective ruleset. Requiring the Check workflow's check job before merge remains pending configuration. The earlier remote run passed; these local changes have not been pushed or run in Linux CI. No remote setting changed.
+
+Task 12 is complete. The task commit is `ci: verify manual-account workflows and repository policy`. Task 13 remains open. Explicit security scan results will be recorded before the demo guide is written.
