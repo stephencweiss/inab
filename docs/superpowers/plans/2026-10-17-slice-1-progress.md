@@ -207,3 +207,18 @@ Scope: manual Tracking snapshot add/list/correct, dated last-known account views
 - Independent specification and code quality reviews approved Task 10 with no material findings. Final lead-agent `npm run check` passed all document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 31 test files and 291 tests.
 
 Task 10 is complete. The task commit is `feat: record manual Tracking balances`. Task 11 remains open. The four accepted development-dependency audit findings remain unchanged.
+
+## October 17, 2026 — Task 11 implementation
+
+Scope: private backup and restore to new paths, strict public current-schema validation, source preservation, and recovery workflow checks. No in-place restore, automatic database selection, or schema migration is added.
+
+- Red: the two focused recovery test files failed because the new application and CLI recovery modules were absent. The first green run passed 17 tests.
+- Public recovery requires the current validated Drizzle ledger and INAB application ID. The migration backup primitive retains support for known older ledger prefixes before an explicit upgrade. Recovery never upgrades or writes audit records to its source or output database.
+
+- SQLite online backup writes a private temporary file on the destination filesystem. Integrity, foreign keys, application ID, and the current ledger are checked before exclusive publication. Tests cover corruption, unsupported history, invalid paths, symlinks, sidecars, interruption, racing targets, and cleanup. Sources and unrelated targets remain unchanged. Full synthetic recovery compares records, IDs, revisions, audit history, snapshots, and reconciliation review evidence, including fresh CLI reads.
+- Specification review found two gaps: a different valid source file could replace the previewed source, and changed-history errors omitted readable ledger counts. Regression tests failed before the fixes and passed after them. Preview now retains file identity for checks before copy and publication. Same-file committed changes remain allowed. Changed history reports the recorded ledger count and supported schema without claiming a validated schema. Success output keeps file identity internal.
+- Final focused recovery checks passed all 37 tests. The exact feature-map workflow passed with fixed temporary source and destination paths. Map guards reject literal or arbitrary recovery paths and check output signals before capturing IDs. Lint and types passed. Independent specification and code quality reviews approved Task 11.
+- The lead's real-terminal check showed source, destination, schema, and operation ID before confirmation. Answering no and pressing Ctrl+C each returned 0 and created no destination directory. Answering yes completed backup and restore without a restore `--db` flag. A fresh process read the restored database. Existing-target restore returned 2. New files had mode 600 and new directories mode 700. Source bytes stayed unchanged during another backup; restored tables and records matched the source. SQLite backup file headers can differ, so source-to-copy validation compares records rather than file bytes. The temporary synthetic directory was removed.
+- Final lead-agent `npm run check` passed document, tracked-path, boundary, formatting, lint, type, test, secret, and build checks: 33 test files and 329 tests. The test phase took 73.63 seconds. No test or process timeout changed. No external service or household data was used.
+
+Task 11 is complete. The task commit is `feat: back up and restore local account data`. Task 12 remains open. The four accepted development-dependency audit findings remain unchanged.

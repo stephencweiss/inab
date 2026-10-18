@@ -1,3 +1,4 @@
+import { requireDatabase } from "./parse.js";
 import { resolve } from "node:path";
 import { reconciliationApplication } from "../bootstrap.js";
 import type { Reconciliation, ReconciliationResult } from "../application/ports.js";
@@ -35,7 +36,7 @@ function output(json: boolean, result: object, text: string) {
   process.stdout.write(json ? `${JSON.stringify(result)}\n` : `${text}\n`);
 }
 export async function executeReconciliation(command: TerminalCommand, prompts: TerminalPrompts) {
-  const app = reconciliationApplication(command.database);
+  const app = reconciliationApplication(requireDatabase(command));
   if (command.action === "reconciliation-list") {
     const records = unwrap(app.list(command.accountId ?? ""));
     output(
@@ -58,7 +59,7 @@ export async function executeReconciliation(command: TerminalCommand, prompts: T
   }
   if (!command.json || !command.confirm)
     process.stderr.write(
-      `Database target: ${resolve(command.database)}\n${render(preview)}\nOperation ID: ${preview.operationId}\n`,
+      `Database target: ${resolve(requireDatabase(command))}\n${render(preview)}\nOperation ID: ${preview.operationId}\n`,
     );
   if (!(await confirmWrite(command, prompts))) {
     output(

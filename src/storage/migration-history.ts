@@ -7,6 +7,16 @@ export const applicationId = 0x494e4142;
 const migrationPath = import.meta.url.endsWith(".ts") ? "../../db/migrations" : "../db/migrations";
 export const migrationsFolder = fileURLToPath(new URL(migrationPath, import.meta.url));
 
+export class MigrationHistoryError extends Error {
+  constructor(
+    message: string,
+    readonly applied: number,
+    readonly latest: number,
+  ) {
+    super(message);
+  }
+}
+
 export function validateMigrationHistory(sqlite: Database.Database, folder: string) {
   const migrations = readMigrationFiles({ migrationsFolder: folder });
   const hasLedger = sqlite
@@ -21,11 +31,20 @@ export function validateMigrationHistory(sqlite: Database.Database, folder: stri
         .all()
         .map(parseMigrationRow)
     : [];
-  if (rows.length > migrations.length) throw new Error("Unknown newer migration history");
+  if (rows.length > migrations.length)
+    throw new MigrationHistoryError(
+      "Unknown newer migration history",
+      rows.length,
+      migrations.length,
+    );
   for (const [index, row] of rows.entries()) {
     const expected = migrations[index];
     if (!expected || row.hash !== expected.hash || row.createdAt !== expected.folderMillis) {
-      throw new Error("Changed or unknown migration history");
+      throw new MigrationHistoryError(
+        "Changed or unknown migration history",
+        rows.length,
+        migrations.length,
+      );
     }
   }
   return { applied: rows.length, latest: migrations.length };

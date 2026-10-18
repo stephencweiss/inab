@@ -261,12 +261,12 @@ it("keeps pending purchases outside the cleared balance", () => {
 **Create:** `src/application/backup.ts`, `src/storage/backup.ts` (or extend Task 5 primitive here), `tests/integration/backup.test.ts`, `tests/cli/backup.test.ts`.
 **Modify:** CLI dispatch, ports, feature map.
 
-- [ ] Create a synthetic database with accounts, entries, snapshots, corrections, and reconciliation evidence. Test backup and restore to a fresh path, then compare all records and IDs. Run `npm test -- tests/integration/backup.test.ts tests/cli/backup.test.ts`; expect red.
-- [ ] Use the SQLite backup API, not a copy of an open database file. Write a temporary output on the destination filesystem, close it, and verify integrity, foreign keys, application ID, and schema version before publishing it under a new name. Reserve the destination exclusively; never overwrite an existing file.
-- [ ] Restore without mutating the backup. Validate a temporary copy before exposing the new target. Reject corrupt, unrelated, newer-schema, same-path, symlink, or existing destinations. Do not auto-upgrade a backup during restore; report the required app/schema version.
-- [ ] Test failed backup/restore cleanup, interruption before publication, and an existing target containing unrelated data. Both source and existing target must remain unchanged. Verify private permissions on final and temporary files.
-- [ ] Run a subprocess against the restored database and verify balances, IDs, versions, and review flags. No in-place restore or database switching is automatic.
-- [ ] Run focused checks and feature map. Commit: `feat: back up and restore local account data`.
+- [x] Create a synthetic database with accounts, entries, snapshots, corrections, and reconciliation evidence. Test backup and restore to a fresh path, then compare all records and IDs. Run `npm test -- tests/integration/backup.test.ts tests/cli/backup.test.ts`; expect red.
+- [x] Use the SQLite backup API, not a copy of an open database file. Write a temporary output on the destination filesystem, close it, and verify integrity, foreign keys, application ID, and schema version before publishing it under a new name. Reserve the destination exclusively; never overwrite an existing file.
+- [x] Restore without mutating the backup. Validate a temporary copy before exposing the new target. Reject corrupt, unrelated, newer-schema, same-path, symlink, or existing destinations. Do not auto-upgrade a backup during restore; report the required app/schema version.
+- [x] Test failed backup/restore cleanup, interruption before publication, and an existing target containing unrelated data. Both source and existing target must remain unchanged. Verify private permissions on final and temporary files.
+- [x] Run a subprocess against the restored database and verify balances, IDs, versions, and review flags. No in-place restore or database switching is automatic.
+- [x] Run focused checks and feature map. Commit: `feat: back up and restore local account data`.
 
 ### Task 12 — Full checks, local hook, and conditional CI
 

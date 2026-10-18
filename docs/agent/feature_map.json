@@ -1146,6 +1146,201 @@
           "stderrContains": ["account-unavailable"]
         }
       ]
+    },
+    {
+      "id": "terminal.recovery.copy",
+      "name": "Back up and restore synthetic account records to new paths",
+      "prerequisites": [
+        "New temporary directory; synthetic data only",
+        "Fixed temporary database, backup, and restored path variables"
+      ],
+      "sourceFiles": [
+        "src/cli/backup.ts",
+        "src/cli/parse.ts",
+        "src/application/backup.ts",
+        "src/application/ports.ts",
+        "src/storage/backup.ts"
+      ],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "add",
+            "--name",
+            "Synthetic recovery cash",
+            "--kind",
+            "cash",
+            "--opening",
+            "100.00",
+            "--as-of",
+            "2026-10-01",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "stdoutContains": ["\"name\":\"Synthetic recovery cash\"", "\"revision\":1"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "add",
+            "--account",
+            "${accountId}",
+            "--date",
+            "2026-10-04",
+            "--posted-on",
+            "2026-10-05",
+            "--amount",
+            "-10.00",
+            "--payee",
+            "Synthetic shop",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureTransaction": true,
+          "stdoutContains": ["\"cents\":-1000", "\"revision\":1"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "reconcile",
+            "${accountId}",
+            "--as-of",
+            "2026-10-10",
+            "--bank-balance",
+            "90.00",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReconciliation": true,
+          "stdoutContains": ["\"status\":\"valid\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "edit",
+            "${transactionId}",
+            "--date",
+            "2026-10-04",
+            "--amount",
+            "-11.00",
+            "--payee",
+            "Synthetic shop",
+            "--memo",
+            "Synthetic correction",
+            "--expected-version",
+            "${transactionRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"cents\":-1100", "\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["backup", "--db", "${database}", "--to", "${backup}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": [
+            "\"ok\":true",
+            "\"destination\":\"${backup}\"",
+            "\"schemaVersion\":2",
+            "\"migrationNeeded\":false"
+          ],
+          "stderrContains": ["Backup source: ${database}", "New destination: ${backup}"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["restore", "--from", "${backup}", "--to", "${restored}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": [
+            "\"ok\":true",
+            "\"destination\":\"${restored}\"",
+            "\"schemaVersion\":2"
+          ],
+          "stderrContains": ["Restore source: ${backup}", "New destination: ${restored}"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${restored}", "register", "${accountId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": [
+            "\"id\":\"${transactionId}\"",
+            "\"clearedCents\":8900",
+            "\"revision\":2"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${restored}",
+            "reconciliation",
+            "list",
+            "--account",
+            "${accountId}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": [
+            "\"id\":\"${reconciliationId}\"",
+            "\"status\":\"needs-review\"",
+            "\"cents\":-1000"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["restore", "--from", "${backup}", "--to", "${restored}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 2,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["invalid-path", "Destination already exists"]
+        }
+      ]
     }
   ]
 }

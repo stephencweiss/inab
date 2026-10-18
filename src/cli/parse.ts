@@ -16,8 +16,12 @@ function parseTransactionAction(words: string[]): Pick<TerminalCommand, "action"
   throw new Error("Invalid transaction arguments");
 }
 export type TerminalCommand = {
-  database: string;
+  database: string | null;
+  source: string | null;
+  destination: string | null;
   action:
+    | "backup"
+    | "restore"
     | "snapshot-add"
     | "snapshot-correct"
     | "snapshot-list"
@@ -49,6 +53,8 @@ export type TerminalCommand = {
   expectedVersion: number | null;
 };
 const valueFlags = new Set([
+  "--from",
+  "--to",
   "--balance",
   "--db",
   "--bank-balance",
@@ -66,6 +72,8 @@ const valueFlags = new Set([
   "--expected-version",
 ]);
 const flagsFor = {
+  backup: ["--db", "--to", "--confirm", "--json"],
+  restore: ["--from", "--to", "--confirm", "--json"],
   "snapshot-add": ["--db", "--account", "--as-of", "--balance", "--confirm", "--json"],
   "snapshot-correct": ["--db", "--balance", "--expected-version", "--confirm", "--json"],
   "snapshot-list": ["--db", "--account", "--json"],
@@ -123,6 +131,8 @@ function parseTokens(args: string[]) {
   return { flags, positionals };
 }
 function parseAction(words: string[]): Pick<TerminalCommand, "action" | "id"> {
+  if ((words[0] === "backup" || words[0] === "restore") && words.length === 1)
+    return { action: words[0], id: null };
   if (words[0] === "init" && words.length === 1) return { action: "init" as const, id: null };
   if (words[0] === "register" && words.length <= 2)
     return { action: "register", id: words[1] ?? null };
@@ -154,16 +164,13 @@ export function parseArguments(args: string[]): TerminalCommand {
   const allowed = flagsFor[parsed.action];
   for (const flag of flags.keys())
     if (!allowed.includes(flag)) throw new Error(`Flag not valid for ${parsed.action}: ${flag}`);
-  const database = flags.get("--db");
-  if (!database?.trim()) throw new Error("An explicit --db path is required");
+  const database = parseDatabaseTarget(flags, parsed.action);
   const expectedVersion = parseRevision(flags.get("--expected-version") ?? null);
-  let amountFlag = "--opening";
-  if (parsed.action === "opening" || parsed.action.startsWith("transaction-"))
-    amountFlag = "--amount";
-  if (parsed.action === "reconcile") amountFlag = "--bank-balance";
-  if (parsed.action.startsWith("snapshot-")) amountFlag = "--balance";
+  const amountFlag = amountFlagFor(parsed.action);
   return {
     database,
+    source: flags.get("--from") ?? null,
+    destination: flags.get("--to") ?? null,
     accountId: flags.get("--account") ?? null,
     payee: flags.get("--payee") ?? null,
     memo: flags.get("--memo") ?? null,
@@ -191,4 +198,23 @@ function parseRevision(raw: string | null) {
   )
     throw new Error("Invalid expected version");
   return expectedVersion;
+}
+
+export function requireDatabase(command: TerminalCommand) {
+  if (command.database === null) throw new Error("An explicit --db path is required");
+  return command.database;
+}
+
+function amountFlagFor(action: TerminalCommand["action"]) {
+  if (action === "opening" || action.startsWith("transaction-")) return "--amount";
+  if (action === "reconcile") return "--bank-balance";
+  if (action.startsWith("snapshot-")) return "--balance";
+  return "--opening";
+}
+
+function parseDatabaseTarget(flags: Map<string, string>, action: TerminalCommand["action"]) {
+  const database = flags.get("--db") ?? null;
+  if (action !== "backup" && action !== "restore" && !database?.trim())
+    throw new Error("An explicit --db path is required");
+  return database;
 }

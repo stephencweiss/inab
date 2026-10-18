@@ -17,20 +17,34 @@ export function terminalPrompts() {
       if (!interactive)
         throw new InvalidInput("Missing input; supply command flags in noninteractive mode");
       readline ??= createInterface({ input: stdin, output: stderr });
-      try {
-        const answer = await readline.question(question);
-        if (answer.toLowerCase() === "cancel") throw new PromptCancelled();
-        return answer;
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") throw new PromptCancelled();
-        if (error instanceof Error && "code" in error && error.code === "ERR_USE_AFTER_CLOSE")
-          throw new PromptCancelled();
-        throw error;
-      }
+      return askTerminalQuestion(readline, question);
     },
     close: () => readline?.close(),
   };
 }
+export async function askTerminalQuestion(
+  readline: ReturnType<typeof createInterface>,
+  question: string,
+) {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  readline.once("SIGINT", cancel);
+  readline.once("close", cancel);
+  try {
+    const answer = await readline.question(question, { signal: controller.signal });
+    if (answer.toLowerCase() === "cancel") throw new PromptCancelled();
+    return answer;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw new PromptCancelled();
+    if (error instanceof Error && "code" in error && error.code === "ERR_USE_AFTER_CLOSE")
+      throw new PromptCancelled();
+    throw error;
+  } finally {
+    readline.off("SIGINT", cancel);
+    readline.off("close", cancel);
+  }
+}
+
 async function required(value: string | null, question: string, prompts: TerminalPrompts) {
   return value === null ? prompts.ask(question) : value;
 }
@@ -59,6 +73,21 @@ export async function completeCommand(
   today: string,
 ): Promise<TerminalCommand> {
   const value = { ...command };
+  if (value.action === "backup" || value.action === "restore") {
+    if (value.action === "backup")
+      value.database = await required(
+        value.database,
+        "Database source path (or cancel): ",
+        prompts,
+      );
+    else value.source = await required(value.source, "Backup source path (or cancel): ", prompts);
+    value.destination = await required(
+      value.destination,
+      "New destination path (or cancel): ",
+      prompts,
+    );
+    return value;
+  }
   if (value.action.startsWith("snapshot-")) return completeSnapshot(value, prompts, today);
   if (value.action === "reconciliation-list" || value.action === "reconcile")
     return completeReconciliation(value, prompts, today);

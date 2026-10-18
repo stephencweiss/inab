@@ -1,3 +1,5 @@
+import { createRecovery } from "./application/backup.js";
+import { createRecoveryStore } from "./storage/backup.js";
 import { createSnapshots } from "./application/snapshots.js";
 import { createSnapshotStore } from "./storage/snapshots.js";
 import { createReconciliations } from "./application/reconcile.js";
@@ -43,4 +45,8 @@ export function snapshotApplication(path: string) {
     now: () => new Date().toISOString(),
     today: localToday,
   });
+}
+
+export function recoveryApplication() {
+  return createRecovery(createRecoveryStore(), randomUUID);
 }

@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe("terminal help", () => {
-  it("shows planned manual-account commands without creating a database", () => {
+  it("shows available manual-account commands without creating a database", () => {
     const result = runCli(["--help"], directory);
 
     expect(result.status).toBe(0);
@@ -24,7 +24,8 @@ describe("terminal help", () => {
     expect(result.stdout).toContain("transaction add");
     expect(result.stdout).toContain("reconcile");
     expect(result.stdout).toContain("snapshot add");
-    expect(result.stdout).toContain("not available yet");
+    expect(result.stdout).toContain("backup --to");
+    expect(result.stdout).toContain("restore --from");
     expect(result.stderr).toBe("");
     expect(readdirSync(directory)).toEqual([]);
   });

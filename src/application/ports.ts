@@ -148,3 +148,31 @@ export type SnapshotStore = {
   write: <T>(work: (session: SnapshotSession) => T) => T;
 };
 export type AccountSummary = StoredAccount & { latestSnapshot: Snapshot | null };
+
+export type RecoveryOperation = "backup" | "restore";
+export type RecoveryMetadata = {
+  source: string;
+  destination: string;
+  schemaVersion: number;
+  migrationNeeded: boolean;
+};
+export type RecoveryResult<T> =
+  | { ok: true; value: T }
+  | { ok: false; reason: "invalid-path" | "missing-source" | "invalid-backup"; message: string }
+  | {
+      ok: false;
+      reason: "schema-version";
+      message: string;
+      schemaVersion: number;
+      requiredSchemaVersion: number;
+    };
+export type RecoverySourceIdentity = { device: number; inode: number };
+export type RecoveryInspection = RecoveryMetadata & { sourceIdentity: RecoverySourceIdentity };
+export type RecoveryPreview = RecoveryInspection & {
+  operation: RecoveryOperation;
+  operationId: string;
+};
+export type RecoveryStore = {
+  inspect: (source: string, destination: string) => RecoveryResult<RecoveryInspection>;
+  copy: (preview: RecoveryPreview) => Promise<RecoveryResult<RecoveryMetadata>>;
+};

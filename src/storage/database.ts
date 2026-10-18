@@ -56,7 +56,7 @@ export function openDatabase(path: string) {
   return connect(validateDatabasePath(path), false);
 }
 
-/** Only init creates a database. Existing targets are checked before writes. */
+/** Init can create an empty target. Existing targets are checked before writes. */
 export async function initializeDatabase(path: string) {
   const target = validateDatabasePath(path);
   const fresh = !existsSync(target);

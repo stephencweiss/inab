@@ -1,3 +1,5 @@
+import { RecoveryStorageError } from "../application/backup.js";
+import { executeRecovery } from "./backup.js";
 import { executeSnapshot } from "./snapshots.js";
 import { executeReconciliation } from "./reconciliation.js";
 import { executeTransaction } from "./transactions.js";
@@ -6,7 +8,7 @@ import { accountApplication, initializeDatabase, localToday } from "../bootstrap
 import type { AccountFailure, AccountResult } from "../application/ports.js";
 import { parseNewAccount } from "../application/accounts.js";
 import { parseMoney } from "../lib/money.js";
-import { parseArguments } from "./parse.js";
+import { parseArguments, requireDatabase } from "./parse.js";
 import type { TerminalCommand } from "./parse.js";
 import {
   completeCommand,
@@ -21,6 +23,8 @@ const help = `INAB — manual accounts
 Usage: inab --db PATH COMMAND [--json]
 
 Available:
+  backup --to NEW_PATH --confirm
+  restore --from BACKUP_PATH --to NEW_PATH --confirm (without --db)
   init --confirm
   account add --name NAME --kind cash|credit --opening SIGNED_USD --as-of YYYY-MM-DD --confirm
   account add --name NAME --kind tracking --confirm
@@ -44,9 +48,7 @@ Cash inflow is positive; cash outflow and credit debt are negative.
 In a terminal, the opening date prompt shows today's local date. Scripts require --as-of.
 Writes show a preview. Enter cancel to stop a prompt. Scripts require --confirm.
 
-These manual-account commands are planned and not available yet:
-  backup --to NEW_PATH
-  restore --from BACKUP_PATH --to NEW_PATH
+Backup uses --db PATH. Restore uses --from BACKUP_PATH and does not accept --db.
 `;
 function failureCode(reason: AccountFailure) {
   if (reason === "account-unavailable") return 3;
@@ -92,10 +94,14 @@ function createPreview(command: TerminalCommand, app: ReturnType<typeof accountA
   return unwrap(app.previewAdd(input));
 }
 async function execute(command: TerminalCommand, prompts: ReturnType<typeof terminalPrompts>) {
+  if (command.action === "backup" || command.action === "restore") {
+    await executeRecovery(command, prompts);
+    return;
+  }
   if (command.action === "init") {
     if (!command.confirm) throw new InvalidInput("Init requires --confirm");
     if (!command.json) process.stderr.write(`Init target: ${command.database}\n`);
-    const result = await initializeDatabase(command.database);
+    const result = await initializeDatabase(requireDatabase(command));
     output(command.json, result, `Initialized database: ${result.database}`);
     return;
   }
@@ -111,7 +117,7 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     await executeTransaction(command, prompts);
     return;
   }
-  const app = accountApplication(command.database);
+  const app = accountApplication(requireDatabase(command));
   if (command.action === "list") {
     const accounts = app.list();
     output(
@@ -133,7 +139,7 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
   }
   const preview = createPreview(command, app);
   if (!command.json || !command.confirm)
-    process.stderr.write(renderPreview(resolve(command.database), preview));
+    process.stderr.write(renderPreview(resolve(requireDatabase(command)), preview));
   if (!(await confirmWrite(command, prompts))) {
     output(
       command.json,
@@ -154,7 +160,11 @@ function reportFailure(error: Error | object, json: boolean) {
     output(json, { ok: true, canceled: true, operationId: null, account: null }, "Canceled");
     return;
   }
-  process.stderr.write(`${error instanceof Error ? error.message : "Storage failure"}\n`);
+  if (json && error instanceof RecoveryStorageError) {
+    process.stderr.write(
+      `${JSON.stringify({ ok: false, reason: "storage-failure", operationId: error.operationId, destination: error.destination, message: error.message })}\n`,
+    );
+  } else process.stderr.write(`${error instanceof Error ? error.message : "Storage failure"}\n`);
   process.exitCode ||= error instanceof InvalidInput ? 2 : 1;
 }
 async function main() {

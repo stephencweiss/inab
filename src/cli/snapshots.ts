@@ -1,3 +1,4 @@
+import { requireDatabase } from "./parse.js";
 import { resolve } from "node:path";
 import { snapshotApplication } from "../bootstrap.js";
 import type { Snapshot, SnapshotResult } from "../application/ports.js";
@@ -31,7 +32,7 @@ function output(json: boolean, value: object, text: string) {
   process.stdout.write(json ? `${JSON.stringify(value)}\n` : `${text}\n`);
 }
 export async function executeSnapshot(command: TerminalCommand, prompts: TerminalPrompts) {
-  const app = snapshotApplication(command.database);
+  const app = snapshotApplication(requireDatabase(command));
   if (command.action === "snapshot-list") {
     const snapshots = unwrap(app.list(command.accountId ?? ""));
     output(
@@ -50,7 +51,7 @@ export async function executeSnapshot(command: TerminalCommand, prompts: Termina
   );
   if (!command.json || !command.confirm)
     process.stderr.write(
-      `Database target: ${resolve(command.database)}\nAccount ID: ${preview.account.id} | revision ${preview.account.revision}\nOperation ID: ${preview.operationId}\nBefore: ${preview.before === null ? "none" : render(preview.before)}\nAfter: ${render(preview.after)}\nAssets: positive; liabilities: negative.\n`,
+      `Database target: ${resolve(requireDatabase(command))}\nAccount ID: ${preview.account.id} | revision ${preview.account.revision}\nOperation ID: ${preview.operationId}\nBefore: ${preview.before === null ? "none" : render(preview.before)}\nAfter: ${render(preview.after)}\nAssets: positive; liabilities: negative.\n`,
     );
   if (!(await confirmWrite(command, prompts))) {
     output(

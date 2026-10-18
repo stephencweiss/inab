@@ -1,9 +1,10 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { isRecord } from "../../src/storage/rows.js";
 import { temporaryDatabase } from "../helpers/database.js";
+import { parseArguments } from "../../src/cli/parse.js";
 import { runCli } from "../helpers/cli.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -14,11 +15,23 @@ function parseStrings(value: unknown): string[] {
 }
 function validateTarget(args: string[]) {
   if (args.length === 1 && (args[0] === "--help" || args[0] === "--version")) return;
-  if (
-    args.filter((arg) => arg === "--db").length !== 1 ||
-    args[args.indexOf("--db") + 1] !== "${database}"
-  )
-    throw new Error("Temporary database target required");
+  const parsed = parseArguments(
+    args.map((arg) =>
+      ["${revision}", "${transactionRevision}", "${snapshotRevision}"].includes(arg) ? "1" : arg,
+    ),
+  );
+  if (parsed.action === "backup") {
+    if (parsed.database === "${database}" && parsed.destination === "${backup}") return;
+    throw new Error("Fixed temporary backup targets required");
+  }
+  if (parsed.action === "restore") {
+    if (parsed.source === "${backup}" && parsed.destination === "${restored}") return;
+    throw new Error("Fixed temporary restore targets required");
+  }
+  const restoredReads = ["list", "show", "register", "snapshot-list", "reconciliation-list"];
+  if (parsed.database === "${database}") return;
+  if (parsed.database === "${restored}" && restoredReads.includes(parsed.action)) return;
+  throw new Error("Temporary database target required");
 }
 function parseStep(value: unknown) {
   if (
@@ -159,10 +172,14 @@ it("validates the hand-authored account map and executes its exact terminal comm
   );
   for (const workflow of workflows) {
     const fixture = temporaryDatabase();
-    const variables = new Map([["database", fixture.path]]);
+    const variables = new Map([
+      ["database", fixture.path],
+      ["backup", join(fixture.directory, "recovery", "backup.sqlite")],
+      ["restored", join(fixture.directory, "restored", "plan.sqlite")],
+    ]);
     const substitute = (text: string) =>
       text.replace(
-        /\$\{(database|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision)\}/g,
+        /\$\{(database|backup|restored|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision)\}/g,
         (_, key: string) => {
           const value = variables.get(key);
           if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
@@ -233,4 +250,28 @@ it("rejects bad structure, duplicate workflow IDs, and broken source references"
     { version: 1, workflows: [{ ...valid, name: 4 }] },
   ])
     expect(() => parseMap(invalid)).toThrow();
+});
+
+it("validates all recovery read and write paths before workflow execution", () => {
+  for (const args of [
+    ["backup", "--db", "${database}", "--to", "${backup}", "--confirm"],
+    ["restore", "--from", "${backup}", "--to", "${restored}", "--confirm"],
+    ["--db", "${restored}", "account", "list"],
+  ])
+    expect(() => validateTarget(args)).not.toThrow();
+  for (const args of [
+    ["backup", "--db", "${database}", "--to", "/synthetic/literal.sqlite", "--confirm"],
+    ["backup", "--db", "/synthetic/literal.sqlite", "--to", "${backup}", "--confirm"],
+    ["restore", "--from", "/synthetic/literal.sqlite", "--to", "${restored}", "--confirm"],
+    ["restore", "--from", "${backup}", "--to", "/synthetic/literal.sqlite", "--confirm"],
+    ["backup", "--db", "${database}", "--to", "${arbitrary}", "--confirm"],
+    ["restore", "--from", "${database}", "--to", "${restored}", "--confirm"],
+    ["restore", "--from", "${backup}", "--to", "${restored}/../escape", "--confirm"],
+    ["backup", "--db", "${database}", "--from", "${backup}", "--confirm"],
+    ["restore", "--db", "${database}", "--from", "${backup}", "--to", "${restored}", "--confirm"],
+    ["--db", "${restored}", "init", "--confirm"],
+    ["backup", "--db", "${database}", "--confirm"],
+    ["restore", "--to", "${restored}", "--confirm"],
+  ])
+    expect(() => validateTarget(args)).toThrow();
 });

@@ -11,7 +11,8 @@
 | [Drizzle and SQLite decision](decisions/2026-10-17-drizzle-sqlite.md) | Agreed ORM, schema types, and migration approach |
 | [Migration version authority](decisions/2026-10-17-migration-version-authority.md) | Implementation constraint: validated Drizzle ledger sequence owns schema version |
 | [Tracking snapshot revisions](decisions/2026-10-17-tracking-snapshot-revisions.md) | Implementation constraint: atomic account/snapshot revisions and dated last-known views |
-| [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, correction review, and Tracking snapshot steps with synthetic execution checks |
+| [Recovery version policy](decisions/2026-10-17-recovery-version-policy.md) | Implementation constraint: current-schema recovery, validated private copies, and exclusive new targets |
+| [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, correction review, Tracking snapshot, and recovery steps with synthetic execution checks |
 | [Verification plan](verification.md) | Required evidence, planned checks, and current enforcement status |
 | [Convention adoption decision](decisions/2026-10-17-agent-conventions.md) | What we adopted from SuChef and what we changed |
 

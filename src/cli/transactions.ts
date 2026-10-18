@@ -1,3 +1,4 @@
+import { requireDatabase } from "./parse.js";
 import { resolve } from "node:path";
 import { transactionApplication } from "../bootstrap.js";
 import type {
@@ -49,7 +50,7 @@ function previewFor(command: TerminalCommand, app: ReturnType<typeof transaction
   return unwrap(app.previewAdd(command.accountId ?? "", { ...input, postedOn: command.postedOn }));
 }
 export async function executeTransaction(command: TerminalCommand, prompts: TerminalPrompts) {
-  const app = transactionApplication(command.database);
+  const app = transactionApplication(requireDatabase(command));
   if (command.action === "register") {
     const result = unwrap(app.register(command.id ?? ""));
     const entries = result.entries;
@@ -63,7 +64,7 @@ export async function executeTransaction(command: TerminalCommand, prompts: Term
   const preview = previewFor(command, app);
   if (!command.json || !command.confirm)
     process.stderr.write(
-      `Database target: ${resolve(command.database)}\nAccount ID: ${preview.account.id} | revision ${preview.account.revision}\nOperation ID: ${preview.operationId}\nBefore: ${preview.before === null ? "none" : render(preview.before)}\nAfter: ${render(preview.after)}\n${renderAffected(preview.affectedReconciliations)}`,
+      `Database target: ${resolve(requireDatabase(command))}\nAccount ID: ${preview.account.id} | revision ${preview.account.revision}\nOperation ID: ${preview.operationId}\nBefore: ${preview.before === null ? "none" : render(preview.before)}\nAfter: ${render(preview.after)}\n${renderAffected(preview.affectedReconciliations)}`,
     );
   if (!(await confirmWrite(command, prompts))) {
     output(
