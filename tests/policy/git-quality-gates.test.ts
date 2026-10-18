@@ -311,6 +311,71 @@ describe("local push checks", { timeout: 30_000 }, () => {
     expect(recorded(root)).toEqual(pushCommands);
     expect(remoteRefs(remote)).toContain(git(root, ["rev-parse", "HEAD"]).stdout.trim());
   });
+  it("fails safely when Git cannot list repository environment names", async () => {
+    const { getPushCheckEnvironment } = await import("../../scripts/checks/git-state.ts");
+    const root = mkdtempSync(path.join(tmpdir(), "inab-missing-environment-"));
+    rmSync(root, { recursive: true });
+    expect(getPushCheckEnvironment(root)).toEqual({
+      ok: false,
+      reason: "Git command failed while checking repository environment.",
+    });
+  });
+  it("builds the child environment without changing the parent environment", async () => {
+    const { getPushCheckEnvironment } = await import("../../scripts/checks/git-state.ts");
+    const { root } = pushFixture();
+    const before = { ...process.env };
+    const result = getPushCheckEnvironment(root);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.env).not.toBe(process.env);
+    expect(result.env.PATH).toBe(before.PATH);
+    expect(process.env).toEqual(before);
+  });
+  it("removes hook repository variables before checks and preserves the runtime environment", () => {
+    const { root, remote } = pushFixture();
+    const localNames = git(root, ["rev-parse", "--local-env-vars"]).stdout.trim().split("\n");
+    const hook = path.join(root, ".husky/pre-push");
+    const hookEnvironment = {
+      GIT_DIR: path.join(root, ".git"),
+      GIT_WORK_TREE: root,
+      GIT_INDEX_FILE: path.join(root, ".git/index"),
+      GIT_COMMON_DIR: path.join(root, ".git"),
+    };
+    writeFileSync(
+      hook,
+      Object.entries(hookEnvironment)
+        .map(([name, value]) => `export ${name}=${JSON.stringify(value)}\n`)
+        .join("") + readFileSync(hook, "utf8"),
+    );
+    const recorder = path.join(root, ".git/record.mjs");
+    writeFileSync(
+      recorder,
+      readFileSync(recorder, "utf8").replace(
+        "const name = process.argv[2];",
+        `const localNames = ${JSON.stringify(localNames)};
+if (localNames.some((name) => Object.hasOwn(process.env, name))) {
+  console.error("Repository environment reached publication checks.");
+  process.exit(26);
+}
+if (process.env.INAB_RUNTIME_MARKER !== "preserved" || !process.env.PATH.endsWith(process.env.INAB_EXPECT_PATH)) process.exit(27);
+const name = process.argv[2];`,
+      ),
+    );
+    git(root, ["add", ".husky/pre-push"]);
+    expect(
+      git(root, ["-c", "core.hooksPath=/dev/null", "commit", "--quiet", "-m", "hook context"])
+        .status,
+    ).toBe(0);
+    const result = spawnSync("/usr/bin/git", ["push", "synthetic", "HEAD:refs/heads/example"], {
+      cwd: root,
+      encoding: "utf8",
+      timeout: 30_000,
+      env: { ...process.env, INAB_RUNTIME_MARKER: "preserved", INAB_EXPECT_PATH: process.env.PATH },
+    });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    expect(recorded(root)).toEqual(pushCommands);
+    expect(remoteRefs(remote)).toContain("refs/heads/example");
+  });
   it.each(pushCommands.map((args, index) => [index, args.join(" ")]))(
     "stops at publication child %s (%s)",
     (index, command) => {

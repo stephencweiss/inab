@@ -47,6 +47,18 @@ function gitValue(root: string, args: string[]) {
   return result.error === undefined && result.status === 0 ? result.stdout.trim() : null;
 }
 
+/** Retains the hook context for validation, but excludes it from publication checks. */
+export function getPushCheckEnvironment(
+  root: string,
+): { ok: true; env: NodeJS.ProcessEnv } | { ok: false; reason: string } {
+  const names = gitValue(root, ["rev-parse", "--local-env-vars"]);
+  if (names === null || names === "")
+    return { ok: false, reason: "Git command failed while checking repository environment." };
+  const env = { ...process.env };
+  for (const name of names.split("\n")) delete env[name];
+  return { ok: true, env };
+}
+
 /** Checks the complete local checkout; ignored files do not affect publication. */
 export function checkPushState(root: string): GitStateResult {
   const shallow = gitValue(root, ["rev-parse", "--is-shallow-repository"]);

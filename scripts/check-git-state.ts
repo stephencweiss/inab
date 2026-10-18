@@ -1,7 +1,12 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { checkCommitState, checkPushState, validatePushInput } from "./checks/git-state.ts";
+import {
+  checkCommitState,
+  checkPushState,
+  getPushCheckEnvironment,
+  validatePushInput,
+} from "./checks/git-state.ts";
 
 const args = process.argv.slice(2);
 const mode = args[0];
@@ -23,10 +28,16 @@ if (!result.ok) {
   process.exit(1);
 }
 if (mode === "push-hook") {
+  const environment = getPushCheckEnvironment(process.cwd());
+  if (!environment.ok) {
+    console.error(environment.reason);
+    process.exit(1);
+  }
   const child = spawnSync(path.join(path.dirname(process.execPath), "npm"), ["run", "check:push"], {
     cwd: process.cwd(),
     stdio: ["ignore", "inherit", "inherit"],
     timeout: 600_000,
+    env: environment.env,
   });
   if (child.error !== undefined || child.signal !== null) {
     console.error("Push checks could not complete.");
