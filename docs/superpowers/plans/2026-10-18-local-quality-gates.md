@@ -130,3 +130,16 @@ Current planning baseline: branch `codex/slice-1-manual-accounts`, commit `c33dd
 The checks used temporary synthetic repositories and local remotes. No project code was published. Remote CI was not run or verified by this work. No push, merge, or PR creation is claimed. Required remote merge enforcement and the existing manual Slice 1 review remain separate tasks.
 
 The review worktree remains at `/Users/sweiss/.codex/worktrees/inab-quality-gates/inab`, on branch `codex/inab-quality-gates`.
+
+## Review follow-up — October 19, 2026
+
+Applied review feedback:
+
+- Keep project-origin history in plan and implementation records only. Active conventions, decisions, verification, agent guidance, and the product design describe INAB requirements directly.
+- Explain the reasons for the local gate decisions and the entry-point/check-module split.
+- Resolve the legacy quick alias before test-shim dispatch. The installed hook and direct alias both retain staged-secret, private-path, and clean-input checks. The 10 focused tests passed before and after this behavior-preserving refactor.
+
+Proposed follow-ups, not installed checks or accepted implementation scope:
+
+- Command completeness: use a policy test that compares an owned command/action list with success and applicable refusal cases in executable CLI or workflow tests. The existing map verifies its listed commands; it does not prove that every supported command has an entry. Lint alone cannot prove behavior coverage.
+- CI enforcement: add workflow policy tests for permissions, secret exposure, and artifact steps, plus a check that tracked source files stay unchanged after the suite. Existing read-only permissions, synthetic fixture guards, and path/secret scans enforce parts of the policy. Tests and builds still need temporary databases and generated files. A source-change check detects writes; stronger prevention of private reads, filesystem writes, or network access requires runner isolation.

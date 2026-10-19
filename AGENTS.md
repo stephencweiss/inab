@@ -35,4 +35,4 @@ The latest user instruction takes precedence over repository guidance. State unr
 - Preserve unrelated work. Keep private data local. Use synthetic fixtures and temporary test databases.
 - Verify changed behavior and report evidence. Do not claim that planned tooling exists.
 - Record durable decisions in `docs/decisions/`. Keep dated plans in `docs/superpowers/plans/`.
-- Do not copy SuChef's models, roles, dependencies, or deployment choices merely because its conventions inspired this project.
+- Base INAB's models, roles, dependencies, and deployment choices on its own requirements.

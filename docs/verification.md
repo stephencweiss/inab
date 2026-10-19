@@ -73,11 +73,7 @@ Include these at the start of Slice 1, not as a separate long infrastructure pro
 
 1. Done: Node.js 24.16.0, npm, the public registry, and the lockfile.
 2. Done: document, tracked-path, lint, type, and test commands.
-3. Done for JSDoc comments, explicit interfaces, redundant types, TypeScript source files, and Sonar complexity. Import boundary rules are active. SuChef exceptions for form data and `src/lib` are not copied.
+3. Done for JSDoc comments, explicit interfaces, redundant types, TypeScript source files, and Sonar complexity. Import boundary rules are active. Form data and shared helpers use the same scoped rules.
 4. Done: the Husky hook and `npm run check`.
 5. The workflow file is present. Required merge protection is absent and still needs configuration.
 6. Done: the first manual-account workflow and its feature map, including invalid input, missing IDs, and stale revision checks.
-
-## SuChef evidence
-
-The SuChef checkout reviewed on October 17, 2026 had strict TypeScript, custom ESLint rules, lint rule tests, a feature map, and a lint/feature-map commit hook. No `.github` directory was present in that checkout. This is historical evidence. [SuChef PR 24](https://github.com/stephencweiss/suchef/pull/24) later added commit types/unit tests, push checks, real hook tests, and advisory CI. INAB adapted the local checks and kept its existing automatic PR and `main` CI triggers. SuChef merge policy and database/browser setup were not adopted.
