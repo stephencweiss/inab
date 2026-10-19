@@ -18,6 +18,7 @@ Status: Slice 1 is implemented and pending user manual review. Next: run the man
 | [Recovery version policy](decisions/2026-10-17-recovery-version-policy.md) | Implementation constraint: current-schema recovery, validated private copies, and exclusive new targets |
 | [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, correction review, Tracking snapshot, and recovery steps with synthetic execution checks |
 | [Verification plan](verification.md) | Required evidence, planned checks, and current enforcement status |
+| [Ideas](ideas.md) | Proposed improvements; not accepted requirements or installed checks |
 | [Convention adoption decision](decisions/2026-10-17-agent-conventions.md) | Scope and enforcement of INAB agent conventions |
 | [Local Git quality decision](decisions/2026-10-18-local-quality-gates.md) | Commit and push checks, revision matching, and remote enforcement limits |
 
