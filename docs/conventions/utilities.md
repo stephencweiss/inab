@@ -2,8 +2,6 @@
 
 Status: required implementation standard. The import boundary check is active.
 
-Adapted from SuChef's utilities convention for a terminal-first application.
-
 | Kind | Home |
 | --- | --- |
 | Pure account rules | `src/accounts/` |
@@ -13,6 +11,8 @@ Adapted from SuChef's utilities convention for a terminal-first application.
 | Database access and migrations | `src/storage/` |
 | External input and provider adapters | `src/adapters/` |
 | Terminal commands | `src/cli/` |
+
+Repository check entry points live at `scripts/check-<topic>.ts`. They read arguments, print results, and set the exit status. `scripts/checks/<topic>.ts` holds the corresponding check logic so policy tests can call it without starting the entry point. This directory contains check modules, not application helpers.
 
 Search the owning directory before adding a helper. Use a short topic name. Do not create a generic `utils.ts` or a barrel that exports every helper. Keep account, transaction, and category logic with its domain owner.
 

@@ -49,7 +49,7 @@ function scan(root: string, mode: string) {
     },
   );
 }
-function runHook(root: string) {
+function runHook(root: string, entry: "installed" | "quick" = "installed") {
   const shim = path.join(root, "npm");
   const project = process.cwd();
   writeFileSync(
@@ -58,14 +58,19 @@ function runHook(root: string) {
 import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 const project = ${JSON.stringify(project)};
-const name = process.argv[3];
+function resolveCheckName(name) {
+  return name === "check:quick" ? "check:commit" : name;
+}
+const name = resolveCheckName(process.argv[3]);
 let result;
-if (name === "check:quick") {
+if (name === "check:commit") {
   const command = JSON.parse(readFileSync(project + "/package.json", "utf8")).scripts[name];
   result = spawnSync("/bin/sh", ["-c", command], { stdio: "inherit" });
-} else if (name === "check:documents" || name === "lint") {
+} else if (name === "check:documents" || name === "lint" || name === "typecheck" || name === "test:unit") {
   console.log(name);
   process.exit(0);
+} else if (name === "check:commit-state") {
+  result = spawnSync(process.execPath, ["--import", ${JSON.stringify(import.meta.resolve("tsx"))}, project + "/scripts/check-git-state.ts", "commit"], { stdio: "inherit" });
 } else if (name === "check:tracked" || name === "check:secrets") {
   const file = name === "check:tracked" ? "check-tracked-paths.ts" : "check-secrets.ts";
   result = spawnSync(process.execPath, ["--import", ${JSON.stringify(import.meta.resolve("tsx"))}, project + "/scripts/" + file, ...process.argv.slice(4).filter((argument) => argument !== "--")], { stdio: "inherit" });
@@ -74,8 +79,11 @@ process.exit(result.status ?? 1);
 `,
   );
   chmodSync(shim, 0o700);
-  writeFileSync(path.join(root, "package.json"), '{"type":"module"}');
-  return spawnSync("/bin/sh", ["-c", readFileSync(".husky/pre-commit", "utf8")], {
+  stage(root, "package.json", '{"type":"module"}');
+  git(root, ["add", "--", "npm"]);
+  const command =
+    entry === "quick" ? "npm run check:quick" : readFileSync(".husky/pre-commit", "utf8");
+  return spawnSync("/bin/sh", ["-c", command], {
     cwd: root,
     encoding: "utf8",
     timeout: 10_000,
@@ -170,24 +178,27 @@ describe("Git secret scans", () => {
       );
     },
   );
-  it("runs installed hook commands against staged paths and staged secret bytes before lint", () => {
-    const root = fixture();
-    stage(root, "added.json", synthetic);
-    writeFileSync(path.join(root, "added.json"), "safe");
-    const secret = runHook(root);
-    expect(secret.status).toBe(1);
-    expect(secret.stdout).toContain("@secretlint/secretlint-rule-gcp");
-    expect(secret.stdout).not.toContain("\nlint\n");
-    git(root, ["rm", "--force", "--", "added.json"]);
-    stage(root, "private.sqlite", "synthetic");
-    const privatePath = runHook(root);
-    expect(privatePath.status).toBe(1);
-    expect(privatePath.stderr).toContain("private.sqlite is a private path");
-    git(root, ["rm", "--force", "--", "private.sqlite"]);
-    const clean = runHook(root);
-    expect(clean.status).toBe(0);
-    expect(clean.stdout).toContain("lint");
-  });
+  it.each(["installed", "quick"] as const)(
+    "runs %s checks against staged paths and staged secret bytes before lint",
+    (entry) => {
+      const root = fixture();
+      stage(root, "added.json", synthetic);
+      writeFileSync(path.join(root, "added.json"), "safe");
+      const secret = runHook(root, entry);
+      expect(secret.status).toBe(1);
+      expect(secret.stdout).toContain("@secretlint/secretlint-rule-gcp");
+      expect(secret.stdout).not.toContain("\nlint\n");
+      git(root, ["rm", "--force", "--", "added.json"]);
+      stage(root, "private.sqlite", "synthetic");
+      const privatePath = runHook(root, entry);
+      expect(privatePath.status).toBe(1);
+      expect(privatePath.stderr).toContain("private.sqlite is a private path");
+      git(root, ["rm", "--force", "--", "private.sqlite"]);
+      const clean = runHook(root, entry);
+      expect(clean.status).toBe(0);
+      expect(clean.stdout).toContain("lint");
+    },
+  );
   it("rejects unknown scan modes with a clear error", () => {
     const result = scan(fixture(), "--missing");
     expect(result.status).toBe(2);
