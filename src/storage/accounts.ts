@@ -1,3 +1,4 @@
+import { setupStatusFrom, assertEmptySetup, markSetupComplete } from "./setup.js";
 import { readSnapshots } from "./snapshots.js";
 import { readReconciliations, invalidateReconciliations } from "./reconciliations.js";
 import { orderRegisterEntries } from "../accounts/register.js";
@@ -11,7 +12,7 @@ import { changes } from "./schema/changes.js";
 import { transactions } from "./schema/transactions.js";
 
 type Connection = ReturnType<typeof openDatabase>;
-type Queries = Pick<Connection["db"], "select" | "insert" | "update">;
+type Queries = Pick<Connection["db"], "select" | "insert" | "update" | "all">;
 function sessionFor(db: Queries): AccountSession {
   return {
     list: () =>
@@ -40,6 +41,10 @@ function sessionFor(db: Queries): AccountSession {
   };
 }
 function save(db: Queries, value: AccountPreview) {
+  if (value.before === null && setupStatusFrom(db).state === "open") {
+    assertEmptySetup(db);
+    markSetupComplete(db, "fresh", null, value.recordedAt);
+  }
   invalidateReconciliations(db, value.affectedReconciliations, value.operationId, value.recordedAt);
   if (value.before === null) db.insert(accounts).values(value.after).run();
   else db.update(accounts).set(value.after).where(eq(accounts.id, value.after.id)).run();

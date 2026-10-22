@@ -46,7 +46,7 @@ it("initializes once, preserves schema after restart, and enforces foreign keys"
   expect(second.sqlite.prepare("SELECT sql FROM sqlite_master ORDER BY name").all()).toEqual(
     schema,
   );
-  expect(validateMigrationHistory(second.sqlite, migrationsFolder).applied).toBe(2);
+  expect(validateMigrationHistory(second.sqlite, migrationsFolder).applied).toBe(4);
   expect(second.sqlite.pragma("user_version", { simple: true })).toBe(0);
   second.sqlite.close();
 });
@@ -367,7 +367,7 @@ it("stops an existing-data upgrade when consistent backup fails", async () => {
   const { sqlite } = openDatabase(value.path);
   try {
     sqlite.exec(
-      "DROP TRIGGER reconciliation_entries_account_insert; DROP TRIGGER reconciliation_entries_account_update; DROP TRIGGER transactions_account_update; DROP TRIGGER reconciliations_account_update; DELETE FROM __drizzle_migrations WHERE rowid = 2;",
+      "DROP TRIGGER reconciliation_entries_account_insert; DROP TRIGGER reconciliation_entries_account_update; DROP TRIGGER transactions_account_update; DROP TRIGGER reconciliations_account_update; DELETE FROM __drizzle_migrations WHERE rowid > 1;",
     );
     const before = sqlite.prepare("SELECT name FROM sqlite_master ORDER BY name").all();
     const backup = vi
@@ -468,11 +468,11 @@ it("can reopen a committed migration after interruption at the Drizzle commit bo
   const reopened = openDatabase(value.path);
   expect(
     reopened.sqlite.prepare("SELECT count(*) AS count FROM __drizzle_migrations").get(),
-  ).toEqual({ count: 2 });
+  ).toEqual({ count: 4 });
   reopened.sqlite.close();
   await expect(initializeDatabase(value.path)).resolves.toEqual({
     ok: true,
     database: value.path,
-    schemaVersion: 2,
+    schemaVersion: 4,
   });
 });

@@ -29,7 +29,7 @@ it("backs up and restores through explicit paths and structured results without 
     ok: true,
     source: f.path,
     destination: backup,
-    schemaVersion: 2,
+    schemaVersion: 4,
     migrationNeeded: false,
   });
   expect(JSON.parse(b.stdout).operationId).toEqual(expect.any(String));

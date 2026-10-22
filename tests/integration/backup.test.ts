@@ -119,7 +119,7 @@ it("preserves all records, IDs, revisions, audit and ledger across backup, resto
   expect(value(await app.commit(preview))).toMatchObject({
     source: f.path,
     destination: backup,
-    schemaVersion: 2,
+    schemaVersion: 4,
     migrationNeeded: false,
     operationId: preview.operationId,
   });
@@ -203,7 +203,7 @@ it.each(["corrupt", "unrelated", "newer", "changed", "older", "foreign-key"])(
       if (kind === "newer")
         sqlite.exec("INSERT INTO __drizzle_migrations VALUES (3, 'future', 9999999999999)");
       if (kind === "changed") sqlite.exec("UPDATE __drizzle_migrations SET hash = 'changed'");
-      if (kind === "older") sqlite.exec("DELETE FROM __drizzle_migrations WHERE rowid = 2");
+      if (kind === "older") sqlite.exec("DELETE FROM __drizzle_migrations WHERE rowid > 1");
       if (kind === "foreign-key")
         sqlite.exec("PRAGMA foreign_keys = OFF; UPDATE snapshots SET account_id = 'missing'");
       sqlite.close();
@@ -216,14 +216,14 @@ it.each(["corrupt", "unrelated", "newer", "changed", "older", "foreign-key"])(
       if (kind === "newer")
         expect(result).toMatchObject({
           reason: "schema-version",
-          schemaVersion: 3,
-          requiredSchemaVersion: 2,
+          schemaVersion: 5,
+          requiredSchemaVersion: 4,
         });
       if (kind === "older")
         expect(result).toMatchObject({
           reason: "schema-version",
           schemaVersion: 1,
-          requiredSchemaVersion: 2,
+          requiredSchemaVersion: 4,
         });
     });
     expect(readFileSync(path)).toEqual(before);
@@ -414,7 +414,7 @@ it("reports recorded ledger count and supported schema for changed history witho
   const result = app.preview("restore", f.path, join(f.directory, "new.sqlite"));
   expect(result).toMatchObject({ ok: false, reason: "invalid-backup" });
   if (result.ok) throw new Error("Expected refusal");
-  expect(result.message).toContain("recorded ledger count 2");
-  expect(result.message).toContain("supports schema version 2");
+  expect(result.message).toContain("recorded ledger count 4");
+  expect(result.message).toContain("supports schema version 4");
   expect(readFileSync(f.path)).toEqual(before);
 });

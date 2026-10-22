@@ -8,5 +8,9 @@ export default defineConfig({
     "./src/storage/schema/reconciliations.ts",
     "./src/storage/schema/snapshots.ts",
     "./src/storage/schema/changes.ts",
+    "./src/storage/schema/setup.ts",
+    "./src/storage/schema/import-sources.ts",
+    "./src/storage/schema/import-history.ts",
+    "./src/storage/schema/import-observations.ts",
   ],
 });
