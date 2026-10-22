@@ -1,3 +1,17 @@
+import { createSetup } from "./application/setup.js";
+import { createSetupStore } from "./storage/setup.js";
+import { createMigration } from "./application/imports.js";
+import { createImportStore } from "./storage/imports.js";
+import { createImportHistory } from "./application/import-history.js";
+import { createImportHistoryStore } from "./storage/import-history.js";
+import { readSources } from "./adapters/ynab/files.js";
+import {
+  readReview,
+  createReview,
+  writeReview,
+  updateReview,
+  withReviewLock,
+} from "./adapters/ynab/review-file.js";
 import { createRecovery } from "./application/backup.js";
 import { createRecoveryStore } from "./storage/backup.js";
 import { createSnapshots } from "./application/snapshots.js";
@@ -49,4 +63,18 @@ export function snapshotApplication(path: string) {
 
 export function recoveryApplication() {
   return createRecovery(createRecoveryStore(), randomUUID);
+}
+
+export function setupApplication(path: string) {
+  return createSetup(createSetupStore(path), { now: () => new Date().toISOString() });
+}
+export function migrationApplication(path: string) {
+  return createMigration(
+    { readSources, readReview, createReview, writeReview, updateReview, withReviewLock },
+    createImportStore(path),
+    { id: randomUUID, now: () => new Date().toISOString(), today: localToday },
+  );
+}
+export function importHistoryApplication(path: string) {
+  return createImportHistory(createImportHistoryStore(path));
 }

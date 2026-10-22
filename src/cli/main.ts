@@ -1,10 +1,17 @@
+import { isSetupArguments } from "./setup-parse.js";
+import { runSetupArguments } from "./setup.js";
 import { RecoveryStorageError } from "../application/backup.js";
 import { executeRecovery } from "./backup.js";
 import { executeSnapshot } from "./snapshots.js";
 import { executeReconciliation } from "./reconciliation.js";
 import { executeTransaction } from "./transactions.js";
 import { resolve } from "node:path";
-import { accountApplication, initializeDatabase, localToday } from "../bootstrap.js";
+import {
+  accountApplication,
+  initializeDatabase,
+  localToday,
+  setupApplication,
+} from "../bootstrap.js";
 import type { AccountFailure, AccountResult } from "../application/ports.js";
 import { parseNewAccount } from "../application/accounts.js";
 import { parseMoney } from "../lib/money.js";
@@ -23,6 +30,21 @@ const help = `INAB — manual accounts
 Usage: inab --db PATH COMMAND [--json]
 
 Available:
+  setup status
+  setup fresh --confirm
+  setup migrate preview --register FILE --plan FILE --review NEW_FILE
+  setup migrate review --review FILE
+  setup migrate account SOURCE --review FILE --name NAME --kind cash|credit|tracking --closed yes|no [--new-group] --expected-review N
+  setup migrate opening GROUP --review FILE --as-of DATE --balance USD --expected-review N
+  setup migrate row ROW --review FILE --treatment history|pending|posted [--account GROUP] [--posted-on DATE] [--payee TEXT] [--role transaction|adjustment|opening] --expected-review N
+  setup migrate observation GROUP --review FILE --row ROW --as-of DATE --balance USD --expected-review N
+  setup migrate resolve ISSUE --review FILE --choice correct-data|revise-adjustment|defer --expected-review N
+  setup migrate acknowledge ISSUE --review FILE --expected-review N
+  setup migrate commit --review FILE --expected-review N --confirm
+  import history accounts
+  import history register ACCOUNT_ID [--limit N] [--offset N]
+  import history plan --month YYYY-MM [--limit N] [--offset N]
+  import history report IMPORT_ID
   backup --to NEW_PATH --confirm
   restore --from BACKUP_PATH --to NEW_PATH --confirm (without --db)
   init --confirm
@@ -93,6 +115,16 @@ function createPreview(command: TerminalCommand, app: ReturnType<typeof accountA
   );
   return unwrap(app.previewAdd(input));
 }
+function showSetupConsequence(command: TerminalCommand) {
+  if (
+    command.action === "add" &&
+    !command.json &&
+    setupApplication(requireDatabase(command)).status().state === "open"
+  )
+    process.stderr.write(
+      "Creating this account starts fresh and closes YNAB migration for this database.\n",
+    );
+}
 async function execute(command: TerminalCommand, prompts: ReturnType<typeof terminalPrompts>) {
   if (command.action === "backup" || command.action === "restore") {
     await executeRecovery(command, prompts);
@@ -138,6 +170,7 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     return;
   }
   const preview = createPreview(command, app);
+  showSetupConsequence(command);
   if (!command.json || !command.confirm)
     process.stderr.write(renderPreview(resolve(requireDatabase(command)), preview));
   if (!(await confirmWrite(command, prompts))) {
@@ -178,6 +211,14 @@ async function main() {
     return;
   }
   const prompts = terminalPrompts();
+  if (isSetupArguments(args)) {
+    try {
+      await runSetupArguments(args, prompts);
+    } finally {
+      prompts.close();
+    }
+    return;
+  }
   let json = args.includes("--json");
   try {
     let command;
