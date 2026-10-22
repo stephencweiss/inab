@@ -122,3 +122,49 @@ describe("module boundaries", () => {
     ).toEqual([]);
   });
 });
+
+describe("bootstrap import boundaries", () => {
+  it("rejects nested import rules reaching unrelated parent account rules", () => {
+    expect(
+      checkBoundaries(
+        fixture({
+          "src/accounts/imports/review.ts": 'import "../reconciliation.js";',
+          "src/accounts/reconciliation.ts": "export {};",
+        }),
+      ),
+    ).not.toEqual([]);
+  });
+  it.each([
+    "../../storage/database.js",
+    "../../application/accounts.js",
+    "node:sqlite",
+    "better-sqlite3",
+  ])("rejects adapter household dependency %s", (target) => {
+    expect(
+      checkBoundaries(
+        fixture({
+          "src/adapters/ynab/files.ts": `import "${target}";`,
+          "src/storage/database.ts": "export {};",
+          "src/application/accounts.ts": "export {};",
+        }),
+      ),
+    ).not.toEqual([]);
+  });
+  it("accepts pure import rules and adapters using owned ports", () => {
+    expect(
+      checkBoundaries(
+        fixture({
+          "src/accounts/imports/review.ts":
+            'import "./types.js"; import "../../lib/money.js"; import "../balances.js"; import "../register.js";',
+          "src/accounts/imports/types.ts": "export {};",
+          "src/accounts/balances.ts": "export {};",
+          "src/accounts/register.ts": "export {};",
+          "src/lib/money.ts": "export {};",
+          "src/application/import-ports.ts": "export {};",
+          "src/adapters/ynab/files.ts":
+            'import "node:fs"; import "../../accounts/imports/types.js"; import "../../application/import-ports.js";',
+        }),
+      ),
+    ).toEqual([]);
+  });
+});

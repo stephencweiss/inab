@@ -3,7 +3,7 @@ import { isBuiltin } from "node:module";
 import path from "node:path";
 import ts from "typescript";
 
-type Layer = "domain" | "application" | "cli" | "composition" | "other";
+type Layer = "domain" | "application" | "cli" | "composition" | "adapter" | "other";
 type Dependency = { readonly node: ts.Node; readonly target: string | null };
 
 function layer(file: string): Layer {
@@ -11,6 +11,7 @@ function layer(file: string): Layer {
   const directory = file.split("/")[0];
   if (["accounts", "budget", "lib"].includes(directory ?? "")) return "domain";
   if (directory === "application") return "application";
+  if (directory === "adapters") return "adapter";
   if (directory === "cli") return "cli";
   return "other";
 }
@@ -73,9 +74,28 @@ function compilerOptions(root: string): ts.CompilerOptions {
 }
 
 function permitsDomainFile(fromFile: string, targetFile: string, root: string): boolean {
-  const fromDirectory = path.relative(path.join(root, "src"), fromFile).split(path.sep)[0];
+  const relative = path.relative(path.join(root, "src"), fromFile).split(path.sep).join("/");
+  if (relative.startsWith("accounts/imports/"))
+    return (
+      targetFile.startsWith("accounts/imports/") ||
+      targetFile.startsWith("lib/") ||
+      ["accounts/balances.ts", "accounts/register.ts"].includes(targetFile)
+    );
+  const fromDirectory = relative.split("/")[0];
   const targetDirectory = targetFile.split("/")[0];
   return targetDirectory === fromDirectory || targetDirectory === "lib";
+}
+
+function permitsResolved(from: Layer, file: string, relative: string, root: string) {
+  if (from === "domain") return permitsDomainFile(file, relative, root);
+  if (from !== "adapter") return permits(from, layer(relative));
+  const owned = path.relative(path.join(root, "src"), path.dirname(file)).split(path.sep).join("/");
+  return (
+    relative.startsWith(`${owned}/`) ||
+    relative.startsWith("accounts/imports/") ||
+    relative.startsWith("lib/") ||
+    /^application\/(?:[a-z-]+-)?ports\.ts$/.test(relative)
+  );
 }
 
 function dependencyProblem(
@@ -88,7 +108,7 @@ function dependencyProblem(
   if (target === null)
     return "Computed module imports cannot be checked. Use a literal module path.";
   if (isBuiltin(target)) {
-    return from === "cli" && target !== "node:sqlite" && target !== "sqlite"
+    return (from === "cli" || from === "adapter") && target !== "node:sqlite" && target !== "sqlite"
       ? null
       : `Forbidden runtime dependency: ${target}.`;
   }
@@ -99,10 +119,11 @@ function dependencyProblem(
     .split(path.sep)
     .join("/");
   if (relative.startsWith("../") || path.isAbsolute(relative) || resolved.isExternalLibraryImport) {
-    return `External dependency is not allowed: ${target}.`;
+    return from === "adapter" && target === "csv-parse/sync"
+      ? null
+      : `External dependency is not allowed: ${target}.`;
   }
-  const allowed =
-    from === "domain" ? permitsDomainFile(file, relative, root) : permits(from, layer(relative));
+  const allowed = permitsResolved(from, file, relative, root);
   return allowed ? null : `Forbidden ${from} dependency: ${target} (${relative}).`;
 }
 
