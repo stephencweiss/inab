@@ -15,7 +15,7 @@ Prefer rules that fail automatically over instructions an agent must remember. E
 | Modules use permitted dependencies | Import boundary checks, including aliases | Active | First application code |
 | Private data and secrets stay out of source and CI | Tracked-path policy and secret scan; inspect publish scope | Active | First commit and every CI run |
 | Manual accounts and balances work without providers | Account create/list/show/rename/opening, atomic history, stale-write, row validation, pure balance, opening-boundary, transaction register/correction/clearing, overflow, and atomic audit tests, reconciliation comparison/evidence/reuse, derived register coverage, targeted correction invalidation, preserved evidence, approved check list rechecks, rollback after invalidation, dated Tracking observations, versioned snapshot correction, unique-date refusal, coherent last-known views, row validation, aggregate revision rechecks, and snapshot audit rollback are active | Partial | Slice 1 |
-| Imports preserve identity and commit atomically | Synthetic import fixtures and database integration tests | Planned | Slice 2 |
+| Imports preserve identity and commit atomically | Synthetic CSV/value checks, setup eligibility and legacy upgrade checks, review-file identity/locking, exact source row accounting, duplicate/zero preservation, Tracking selection/adjustment evidence, canonical live register validation, injected write rollback, concurrent confirmations, receipt reuse, CLI/history workflows, and backup/restore are installed | Active | Slice 2 |
 | Migrations and restore preserve data | Temporary database init/upgrade, history, rollback, constraints, private files, consistent backup/restore, complete record recovery, source preservation, exclusive publication, interruption cleanup, and unsupported-source rejection tests | Active | First persisted data |
 | Budget money remains correct | Accounting examples and invariant tests | Planned | Slice 3 |
 | Split amounts remain correct | Parent/allocation sum tests | Planned | First split support |
@@ -75,3 +75,11 @@ Include these at the start of Slice 1, not as a separate long infrastructure pro
 ## SuChef evidence
 
 The reviewed checkout has strict TypeScript, ESLint custom rules, lint rule tests, a feature map with unit/browser checks, and a Husky hook that runs lint and feature-map validation. Its hook does not run all tests or type checks. No `.github` directory was present. INAB now has a hook and a CI workflow. The feature-map check starts with the first working workflow.
+
+## Slice 2 migration checks
+
+The [Slice 2 demo](slice-2-demo.md) runs the built CLI from a separate temporary working directory. It copies only synthetic CSV fixtures, checks pause/resume while household tables stay empty, stale confirmation without writes, atomic confirmation, exact duplicates and zero rows, plan history, Tracking adjustment review, refusal after setup, safe receipt retry after the source file is removed, and backup/restore. User manual review and household migration are still separate steps.
+
+Import sources and review files require explicit private paths outside the checkout. Resource limits and strict CSV/review schemas are tested. Source statuses remain distinct from posting evidence. Missing transfer/split relationships are warnings, and historical source totals remain distinct from live balance effects and revised adjustments. Date/amount/payee hashes do not define transaction identity.
+
+The two new migrations install setup/import storage and reviewed relationship/evidence guards. Current schema version is 4, derived from the validated migration ledger. Prior-schema upgrades retain accounts and audit history, classify an existing household as start-fresh complete, and preserve recovery backups. No reset operation or automatic household import is installed.

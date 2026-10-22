@@ -8,3 +8,5 @@ Keep Tracking accounts balance-only in Slice 1. This is not a permanent prohibit
 The latest snapshot provides a last known balance at its effective date. It does not prove the present balance. Estimation of later balances is not an agreed feature yet.
 
 See the [design](../superpowers/specs/2026-10-17-inab-design.md) and [Slice 1 plan](../superpowers/plans/2026-10-17-slice-1-manual-accounts.md).
+
+For the agreed Slice 2 extension, see [Tracking transactions and balance adjustments](2026-10-20-tracking-balance-adjustments.md). The snapshot-only rule above describes Slice 1.

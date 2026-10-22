@@ -28,7 +28,7 @@
           "promptAnswers": [],
           "exitStatus": 0,
           "captureAccount": false,
-          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":2"],
+          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":4"],
           "stderrContains": []
         },
         {
@@ -1168,7 +1168,7 @@
           "promptAnswers": [],
           "exitStatus": 0,
           "captureAccount": false,
-          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":2"],
+          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":4"],
           "stderrContains": []
         },
         {
@@ -1279,7 +1279,7 @@
           "stdoutContains": [
             "\"ok\":true",
             "\"destination\":\"${backup}\"",
-            "\"schemaVersion\":2",
+            "\"schemaVersion\":4",
             "\"migrationNeeded\":false"
           ],
           "stderrContains": ["Backup source: ${database}", "New destination: ${backup}"]
@@ -1293,7 +1293,7 @@
           "stdoutContains": [
             "\"ok\":true",
             "\"destination\":\"${restored}\"",
-            "\"schemaVersion\":2"
+            "\"schemaVersion\":4"
           ],
           "stderrContains": ["Restore source: ${backup}", "New destination: ${restored}"]
         },
@@ -1339,6 +1339,405 @@
           "captureAccount": false,
           "stdoutContains": [],
           "stderrContains": ["invalid-path", "Destination already exists"]
+        }
+      ]
+    },
+    {
+      "id": "terminal.setup.migration",
+      "name": "Migrate once from synthetic YNAB sources",
+      "prerequisites": [
+        "New temporary database; source CSVs copied from synthetic tests/fixtures/ynab/ files. Review and recovery paths stay inside that fixture."
+      ],
+      "sourceFiles": [
+        "src/cli/setup.ts",
+        "src/cli/imports.ts",
+        "src/application/imports.ts",
+        "src/storage/imports.ts",
+        "src/cli/import-history.ts"
+      ],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"schemaVersion\":4"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "preview",
+            "--register",
+            "${registerCsv}",
+            "--plan",
+            "${planCsv}",
+            "--review",
+            "${review}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": true,
+          "captureImport": false,
+          "stdoutContains": ["\"ready\":false"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "account",
+            "${sourceAccountKey}",
+            "--review",
+            "${review}",
+            "--expected-review",
+            "${reviewRevision}",
+            "--name",
+            "Synthetic cash",
+            "--kind",
+            "cash",
+            "--closed",
+            "no",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": true,
+          "captureImport": false,
+          "stdoutContains": ["\"kind\":\"cash\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "list", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"accounts\":[]"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "review",
+            "--review",
+            "${review}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": true,
+          "captureImport": false,
+          "stdoutContains": ["\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "opening",
+            "${sourceAccountKey}",
+            "--review",
+            "${review}",
+            "--expected-review",
+            "${reviewRevision}",
+            "--as-of",
+            "2026-10-22",
+            "--balance",
+            "100.00",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": true,
+          "captureImport": false,
+          "stdoutContains": ["\"openingCents\":10000"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "acknowledge",
+            "history:${sourceAccountKey}",
+            "--review",
+            "${review}",
+            "--expected-review",
+            "${reviewRevision}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": true,
+          "captureImport": false,
+          "stdoutContains": ["\"ready\":true"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "commit",
+            "--review",
+            "${review}",
+            "--expected-review",
+            "${reviewRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": true,
+          "stdoutContains": ["\"sourceRows\":5", "\"historyOnly\":5", "\"reused\":false"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "setup", "status", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"state\":\"ynab\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "import", "history", "accounts", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"name\":\"Synthetic cash\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "import",
+            "history",
+            "register",
+            "${importAccountId}",
+            "--limit",
+            "3",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"cents\":-1234", "\"cents\":0"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "import",
+            "history",
+            "plan",
+            "--month",
+            "2026-10",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"assignedCents\":10000", "\"availableCents\":8766"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "import", "history", "report", "${importId}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"sourceRows\":5"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "commit",
+            "--review",
+            "${review}",
+            "--expected-review",
+            "${reviewRevision}",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"reused\":true"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "preview",
+            "--register",
+            "${registerCsv}",
+            "--plan",
+            "${planCsv}",
+            "--review",
+            "${review}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": [],
+          "stderrContains": ["setup-closed"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "backup", "--to", "${backup}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"schemaVersion\":4"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["restore", "--from", "${backup}", "--to", "${restored}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"schemaVersion\":4"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${restored}", "setup", "status", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"state\":\"ynab\""],
+          "stderrContains": []
+        }
+      ]
+    },
+    {
+      "id": "terminal.setup.fresh",
+      "name": "Start fresh and close migration",
+      "prerequisites": ["New temporary database and synthetic CSV fixtures."],
+      "sourceFiles": ["src/cli/setup.ts", "src/application/setup.ts", "src/storage/setup.ts"],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"schemaVersion\":4"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "setup", "fresh", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"state\":\"fresh\""],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "setup",
+            "migrate",
+            "preview",
+            "--register",
+            "${registerCsv}",
+            "--plan",
+            "${planCsv}",
+            "--review",
+            "${review}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": [],
+          "stderrContains": ["setup-closed"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "account", "list", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "captureReview": false,
+          "captureImport": false,
+          "stdoutContains": ["\"accounts\":[]"],
+          "stderrContains": []
         }
       ]
     }
