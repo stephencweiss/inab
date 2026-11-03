@@ -70,7 +70,7 @@ export async function executeTransaction(command: TerminalCommand, prompts: Term
     output(
       command.json,
       { ok: true, canceled: true, operationId: null, transaction: null },
-      "Canceled",
+      "Abandoned",
     );
     return;
   }

@@ -65,7 +65,7 @@ export async function executeReconciliation(command: TerminalCommand, prompts: T
     output(
       command.json,
       { ok: true, canceled: true, operationId: null, reconciliation: null },
-      "Canceled",
+      "Abandoned",
     );
     return;
   }

@@ -29,7 +29,7 @@ it("backs up and restores through explicit paths and structured results without 
     ok: true,
     source: f.path,
     destination: backup,
-    schemaVersion: 2,
+    schemaVersion: 4,
     migrationNeeded: false,
   });
   expect(JSON.parse(b.stdout).operationId).toEqual(expect.any(String));
@@ -97,7 +97,8 @@ it.each(["no", "cancel", "interrupt"])(
         if (answers.length) return answers.shift() ?? "";
         expect(messages.join("\n")).toContain(f.path);
         expect(messages.join("\n")).toContain(destination);
-        expect(question).toContain("yes/no");
+        expect(question).toContain("[y]es, [n]o, [h]elp, [a]bandon");
+        expect(question).not.toContain("cancel");
         if (answer !== "no") throw new PromptCancelled();
         return "no";
       },
@@ -145,7 +146,7 @@ it("turns a terminal Ctrl+C event into cancellation before any recovery write", 
   const output = new PassThrough();
   const terminal = createInterface({ input, output, terminal: true });
   try {
-    const question = askTerminalQuestion(terminal, "Apply this change? [yes/no]: ");
+    const question = askTerminalQuestion(terminal, "Apply this change? ([y]es, [n]o, [a]bandon): ");
     terminal.emit("SIGINT");
     await expect(question).rejects.toBeInstanceOf(PromptCancelled);
   } finally {

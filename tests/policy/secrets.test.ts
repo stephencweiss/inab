@@ -198,6 +198,8 @@ describe("Git secret scans", () => {
       expect(clean.status).toBe(0);
       expect(clean.stdout).toContain("lint");
     },
+    /** This case runs three real hooks, each with its own ten-second subprocess limit. */
+    30_000,
   );
   it("rejects unknown scan modes with a clear error", () => {
     const result = scan(fixture(), "--missing");

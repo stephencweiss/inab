@@ -20,6 +20,8 @@ describe("terminal help", () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("Usage: inab");
+    expect(result.stdout).toContain("Enter a or abandon");
+    expect(result.stdout).not.toContain("Enter cancel");
     expect(result.stdout).toContain("account add");
     expect(result.stdout).toContain("transaction add");
     expect(result.stdout).toContain("reconcile");

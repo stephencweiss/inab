@@ -23,7 +23,7 @@ export async function executeRecovery(command: TerminalCommand, prompts: Termina
     process.stdout.write(
       command.json
         ? `${JSON.stringify({ ok: true, canceled: true, operationId: null, destination: null })}\n`
-        : "Canceled\n",
+        : "Abandoned\n",
     );
     return;
   }

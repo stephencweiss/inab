@@ -1,10 +1,11 @@
-import { existsSync, readFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { isRecord } from "../../src/storage/rows.js";
 import { temporaryDatabase } from "../helpers/database.js";
 import { parseArguments } from "../../src/cli/parse.js";
+import { isSetupArguments, parseSetupArguments } from "../../src/cli/setup-parse.js";
 import { runCli } from "../helpers/cli.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -15,6 +16,10 @@ function parseStrings(value: unknown): string[] {
 }
 function validateTarget(args: string[]) {
   if (args.length === 1 && (args[0] === "--help" || args[0] === "--version")) return;
+  if (isSetupArguments(args)) {
+    validateSetupTarget(args);
+    return;
+  }
   const parsed = parseArguments(
     args.map((arg) =>
       ["${revision}", "${transactionRevision}", "${snapshotRevision}"].includes(arg) ? "1" : arg,
@@ -32,6 +37,24 @@ function validateTarget(args: string[]) {
   if (parsed.database === "${database}") return;
   if (parsed.database === "${restored}" && restoredReads.includes(parsed.action)) return;
   throw new Error("Temporary database target required");
+}
+function validateSetupTarget(args: string[]) {
+  const parsed = parseSetupArguments(args.map((arg) => (arg === "${reviewRevision}" ? "1" : arg)));
+  const readOnly = parsed.action === "status" || parsed.action.startsWith("history-");
+  if (parsed.database !== "${database}" && !(parsed.database === "${restored}" && readOnly))
+    throw new Error("Fixed temporary setup target required");
+  const paths = new Map([
+    ["--register", "${registerCsv}"],
+    ["--plan", "${planCsv}"],
+    ["--review", "${review}"],
+  ]);
+  for (const [flag, expected] of paths) {
+    const actual = parsed.flags.get(flag);
+    if (actual !== undefined && actual !== expected)
+      throw new Error("Fixed synthetic migration path required");
+  }
+  if (parsed.action === "preview" && [...paths.keys()].some((flag) => !parsed.flags.has(flag)))
+    throw new Error("Complete migration fixtures required");
 }
 function parseStep(value: unknown) {
   if (
@@ -53,6 +76,8 @@ function parseStep(value: unknown) {
     promptAnswers: parseStrings(value.promptAnswers),
     exitStatus: value.exitStatus,
     captureAccount: value.captureAccount,
+    captureReview: value.captureReview === true,
+    captureImport: value.captureImport === true,
     captureSnapshot: value.captureSnapshot === true,
     captureTransaction: value.captureTransaction === true,
     captureReconciliation: value.captureReconciliation === true,
@@ -143,11 +168,39 @@ function parseCapturedReconciliation(output: string) {
     throw new Error("Cannot capture reconciliation ID");
   return parsed.reconciliation.id;
 }
+function captureReviewVariables(stdout: string, variables: Map<string, string>) {
+  const result: unknown = JSON.parse(stdout);
+  if (
+    !isRecord(result) ||
+    !Number.isSafeInteger(result.revision) ||
+    typeof result.revision !== "number" ||
+    !Array.isArray(result.sourceAccounts) ||
+    !isRecord(result.sourceAccounts[0]) ||
+    typeof result.sourceAccounts[0].key !== "string"
+  )
+    throw new Error("Cannot capture review");
+  variables.set("reviewRevision", String(result.revision));
+  variables.set("sourceAccountKey", result.sourceAccounts[0].key);
+  if (
+    isRecord(result.derived) &&
+    Array.isArray(result.derived.accounts) &&
+    isRecord(result.derived.accounts[0]) &&
+    typeof result.derived.accounts[0].localId === "string"
+  )
+    variables.set("importAccountId", result.derived.accounts[0].localId);
+}
 function captureVariables(
   step: ReturnType<typeof parseStep>,
   stdout: string,
   variables: Map<string, string>,
 ) {
+  if (step.captureReview) captureReviewVariables(stdout, variables);
+  if (step.captureImport) {
+    const result: unknown = JSON.parse(stdout);
+    if (!isRecord(result) || typeof result.importId !== "string")
+      throw new Error("Cannot capture import");
+    variables.set("importId", result.importId);
+  }
   if (step.captureSnapshot) {
     const captured = parseCapturedSnapshot(stdout);
     variables.set("snapshotId", captured.id);
@@ -171,13 +224,16 @@ it.each(parseMap(JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.j
   (workflow) => {
     const fixture = temporaryDatabase();
     const variables = new Map([
+      ["registerCsv", join(fixture.directory, "register.csv")],
+      ["planCsv", join(fixture.directory, "plan.csv")],
+      ["review", join(fixture.directory, "review.json")],
       ["database", fixture.path],
       ["backup", join(fixture.directory, "recovery", "backup.sqlite")],
       ["restored", join(fixture.directory, "restored", "plan.sqlite")],
     ]);
     const substitute = (text: string) =>
       text.replace(
-        /\$\{(database|backup|restored|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision)\}/g,
+        /\$\{(database|backup|restored|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision|registerCsv|planCsv|review|reviewRevision|sourceAccountKey|importAccountId|importId)\}/g,
         (_, key: string) => {
           const value = variables.get(key);
           if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
@@ -185,6 +241,13 @@ it.each(parseMap(JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.j
         },
       );
     try {
+      if (workflow.id.startsWith("terminal.setup.")) {
+        cpSync(
+          resolve(root, "tests/fixtures/ynab/register.csv"),
+          join(fixture.directory, "register.csv"),
+        );
+        cpSync(resolve(root, "tests/fixtures/ynab/plan.csv"), join(fixture.directory, "plan.csv"));
+      }
       expect(workflow.prerequisites.length).toBeGreaterThan(0);
       for (const step of workflow.steps) {
         expect(step.promptAnswers).toEqual([]);
@@ -273,4 +336,29 @@ it("validates all recovery read and write paths before workflow execution", () =
     ["restore", "--to", "${restored}", "--confirm"],
   ])
     expect(() => validateTarget(args)).toThrow();
+});
+it("restricts migration review and source paths to fixed synthetic fixtures", () => {
+  const preview = [
+    "--db",
+    "${database}",
+    "setup",
+    "migrate",
+    "preview",
+    "--register",
+    "${registerCsv}",
+    "--plan",
+    "${planCsv}",
+    "--review",
+    "${review}",
+    "--json",
+  ];
+  expect(() => validateTarget(preview)).not.toThrow();
+  for (const key of ["${registerCsv}", "${planCsv}", "${review}", "${database}"]) {
+    expect(() =>
+      validateTarget(preview.map((v) => (v === key ? "/synthetic/escape" : v))),
+    ).toThrow();
+    expect(() =>
+      validateTarget(preview.map((v) => (v === key ? `${key}/../escape` : v))),
+    ).toThrow();
+  }
 });

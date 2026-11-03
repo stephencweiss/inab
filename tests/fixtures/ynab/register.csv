@@ -1,0 +1,6 @@
+﻿"Account","Flag","Date","Payee","Category Group/Category","Category Group","Category","Memo","Outflow","Inflow","Cleared"
+"Demo cash","","10/22/2026","Example store","Daily / Food","Daily","Food","Synthetic memo, ""quoted""
+second line","$12.34","$0.00","Cleared"
+"Demo cash","","10/22/2026","Example store","Daily / Food","Daily","Food","Synthetic memo, ""quoted""
+second line","$12.34","$0.00","Cleared"
+"Demo cash","","10/22/2026","","","","","","$0.00","$0.00","Cleared"

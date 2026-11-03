@@ -1,7 +1,7 @@
 # INAB project design and build roadmap
 
 Date: October 17, 2026
-Status: Slice 1 is implemented and pending user manual review. This document records agreed scope and proposed later build steps. Slice 2 has not been planned or started.
+Status: Slice 1 is implemented and pending user manual review. This document records agreed scope and proposed later build steps. Slice 2 setup migration is implemented and verified locally; user manual review is pending.
 
 ## Purpose
 
@@ -17,12 +17,12 @@ Keep running costs and maintenance low. Each build slice must produce a working 
 - Match YNAB's envelope budgeting behavior as the starting point.
 - Assign money already held; carry unused category balances forward; move money to cover overspending.
 - Use Cash, Credit, and Tracking account classes.
-- Keep Tracking balances outside the budget. Slice 1 supports periodic balance updates only. Individual Tracking transactions may be supported later, after defining their interaction with snapshots to prevent double counting.
+- Keep Tracking balances outside the budget. Slice 1 supports periodic balance updates only. For Slice 2, plan Tracking transactions and explicit balance adjustments together. A balance observation establishes a target; an adjustment bridges the difference from the recorded balance. See the [Tracking balance decision](../../decisions/2026-10-20-tracking-balance-adjustments.md).
 - Support full YNAB history import as a product feature.
 - Select the active start month during terminal or web setup. Do not hardcode a month.
 - Support local accounts and manual transactions without YNAB or Plaid.
 - Give accounts and transactions permanent INAB IDs, independent of external providers.
-- Allow later imports and Plaid links to attach to existing local accounts, with review of overlapping history.
+- Allow future Plaid links to attach to existing local accounts, with review of overlapping history. YNAB migration is available only during initial setup; see the [bootstrap decision](../../decisions/2026-10-21-ynab-bootstrap-only.md).
 - Add Plaid connections for account sync.
 - Classify transactions with saved rules, past decisions, local model suggestions, and human review.
 - Add Amazon item details and transaction splits, using Reconcile as reference material.
@@ -106,13 +106,13 @@ Before Slice 3, write and verify examples for: funded purchases, opening debt, s
 
 ## Identity and migration
 
-Each local account and transaction receives a permanent internal ID before any provider is connected. A user can create a Cash or Credit account, record an opening balance at a defined date, add and edit transactions, and reconcile its balance manually. Tracking accounts use manual balance snapshots. All accounts can remain unconnected.
+Each local account and transaction receives a permanent internal ID before any provider is connected. A user can create a Cash or Credit account, record an opening balance at a defined date, add and edit transactions, and reconcile its balance manually. Tracking accounts currently use manual balance snapshots. The agreed Slice 2 model adds transactions and explicit adjustments at balance observations; see the [Tracking balance decision](../../decisions/2026-10-20-tracking-balance-adjustments.md). All accounts can remain unconnected.
 
 Source records separately hold provider names, connection IDs, external account and transaction IDs, and import provenance. Linking a provider does not replace the local account or its history. Preserve transaction IDs, categories, splits, notes, and other user edits when provider data changes.
 
 Account mapping has two separate steps:
 
-- During YNAB import, the user maps each exported account to an existing local account or creates one, and confirms Cash, Credit, or Tracking. The export and user confirmation establish this mapping; Plaid is not required.
+- During initial YNAB migration, the user maps exported accounts into new local accounts and confirms Cash, Credit, or Tracking. The export and user confirmation establish this mapping; Plaid is not required. Import into established manual accounts is not supported.
 - During Plaid linking, the user maps each selected external account to an existing local account or creates one. Show identifying account details and currency for confirmation. Do not infer identity from an account name alone or create a second account on reconnection.
 
 ### Overlapping transactions and opening balances
@@ -137,15 +137,17 @@ The key acceptance scenario is: start with manual transactions, link a bank acco
 
 ### YNAB migration
 
-CSV import must preserve legitimate identical purchases. A hash of date, amount, and payee alone cannot serve as transaction identity. Track file identity and row position for exact repeat imports. For overlapping or revised exports, compare candidate records and ask for review when identity is uncertain. Inspect split representation before choosing reconstruction rules; do not invent missing parent links.
+YNAB migration is an optional initial setup path, alongside starting fresh. It requires an empty database with setup incomplete. Review can pause and resume in a private file before import; the database stays empty until final confirmation. After either path completes setup, refuse YNAB imports. Migrating again requires a new plan in a separate database; preserve the existing plan. See the [bootstrap decision](../../decisions/2026-10-21-ynab-bootstrap-only.md).
+
+CSV import must preserve legitimate identical purchases. Track file identity and row position for source provenance and safe retries of the unfinished setup. Do not match against established manual history or merge subsequent exports after setup. Inspect split representation before choosing reconstruction rules; do not invent missing parent links.
 
 Migration workflow:
 
 1. Read both exports and produce a preview without changing the active plan.
-2. Map each exported account to an existing local account or create one. Confirm Cash, Credit, or Tracking, closed accounts, and ambiguous names. Review overlap with existing manual entries and the opening-balance boundary.
-3. Import the full exported history, including historical Tracking rows. Ongoing Tracking updates can still use snapshots only.
+2. Map each exported account into a new local account. Confirm Cash, Credit, or Tracking, closed accounts, ambiguous names, and opening-balance boundaries. Review can pause and resume in a private local file without creating active accounts.
+3. Import the full exported history, including historical Tracking rows. Tracking transactions and observed balances follow the [Tracking balance decision](../../decisions/2026-10-20-tracking-balance-adjustments.md). Do not create a second adjustment when an imported record already represents it.
 4. Preserve monthly Assigned, Activity, and Available values as imported historical records. Keep imported values distinct from new calculated results.
-5. Report source totals, imported totals, rejected rows, unresolved transfers/splits, and missing data.
+5. Report source totals, imported totals, rejected rows, unresolved transfers/splits, and missing data. Commit the reviewed import and setup completion atomically; further YNAB imports are then refused.
 6. Ask for the active start month when the user is ready to activate the plan.
 7. Establish and verify opening account balances, category balances, card reserves, and Ready to Assign at that boundary.
 8. Activate only when required differences are resolved. Keep raw source records for later inspection.
@@ -168,11 +170,13 @@ Done when: an account works without any import or provider; manual edits produce
 
 ### Slice 2 — Import YNAB history into local accounts
 
-Workflow: select exports, preview account mappings, create or select local accounts, review overlapping records, import, and inspect historical account and plan data.
+Workflow: choose migration during initial setup, select both exports, preview new account mappings, review source records, confirm import, and inspect historical account and plan data. Starting fresh is the other setup path; completing either path closes YNAB import.
 
-Include source provenance, historical plan records, split/transfer inspection, and import reports. The user confirms mapping without Plaid. Preserve local account IDs and existing manual history. Apply the opening-balance rules above. Stage imported categories and splits for inspection; active budget calculations start in Slice 3.
+Include source provenance, historical plan records, split/transfer inspection, and import reports. The user confirms mapping without Plaid. Assign permanent local account IDs and retain source provenance. Refuse import into established plans. Apply the opening-balance rules above. Stage imported categories and splits for inspection; active budget calculations start in Slice 3.
 
-Done when: source row counts and totals can be traced; exact re-import adds nothing; identical real purchases survive; overlap with a manual account is reviewed; ambiguous data is reported; a failed import changes nothing. No claim of full historical accounting equivalence is required.
+Tracking work in Slice 2 is limited to importing and inspecting history correctly, including source adjustments, observation evidence, and affected review states. Broader manual Tracking transaction and adjustment commands are future work under Slice 6. Existing Slice 1 snapshot commands remain available.
+
+Done when: source row counts and totals can be traced; interrupted setup can resume; repeated confirmation after success writes nothing; imports after setup or into established manual history are refused; identical real purchases survive; ambiguous data is reported; a failed import changes nothing. No claim of full historical accounting equivalence is required.
 
 ### Slice 3 — Activate and run an envelope budget
 
@@ -201,6 +205,8 @@ Done when: splits sum exactly; corrections update the plan; undo restores relate
 ### Slice 6 — Update Tracking balances
 
 Workflow: request balance updates, review missing values, and view month-end history. Add a due-update check when the local app starts.
+
+Include broader manual Tracking transaction entry, editing, and explicit balance observation/adjustment commands in a separate future implementation plan. Use the agreed Tracking balance and review rules. These commands are outside Slice 2; Slice 2 provides only the import and historical inspection support it needs.
 
 Store amount, currency, source, fetched time, and effective date. Display the latest snapshot as the last known balance with its effective date, not as a verified present balance. Use historical month-end data only when the provider actually supplies it. A current balance fetched later must not be labeled as a past month-end balance. Retrying an update must not create duplicate snapshots.
 
@@ -246,7 +252,7 @@ Defer multiple plans, multi-currency conversion, investment transaction analysis
 
 Settled for Slice 1: TypeScript/Node.js with Drizzle ORM, better-sqlite3, SQLite, and Drizzle Kit; USD; opening balances at the close of the selected date; and Uncleared, Cleared, and Reconciled statuses. Reconciliation compares cleared records with the bank's posted balance and never adds a silent adjustment. See the [manual-account defaults decision](../../decisions/2026-10-17-manual-account-defaults.md).
 
-Resolve before Slice 2: actual split encoding, import preview/report format, and review of overlapping manual and exported history.
+Slice 2 preserves row-level split evidence because the inspected exports supply no parent IDs. The implemented review/report contracts are in the [Slice 2 design](2026-10-22-slice-2-bootstrap-import-design.md). Setup eligibility is agreed: an empty database with setup incomplete. YNAB import is setup-only; manual overlap matching belongs to future Plaid work.
 
 Resolve before Slice 3: exact month-boundary rules, pending/future entry treatment, and opening-state validation.
 

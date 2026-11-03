@@ -2,7 +2,10 @@ import { createInterface } from "node:readline/promises";
 import { stdin, stderr } from "node:process";
 import type { TerminalCommand } from "./parse.js";
 
-export class PromptCancelled extends Error {}
+import { PromptCancelled } from "./prompt-errors.js";
+import { choice, confirm } from "./migration-questions.js";
+
+export { PromptCancelled } from "./prompt-errors.js";
 export class InvalidInput extends Error {}
 export type TerminalPrompts = {
   ask: (question: string) => Promise<string>;
@@ -31,8 +34,13 @@ export async function askTerminalQuestion(
   readline.once("SIGINT", cancel);
   readline.once("close", cancel);
   try {
-    const answer = await readline.question(question, { signal: controller.signal });
-    if (answer.toLowerCase() === "cancel") throw new PromptCancelled();
+    const answer = await readline.question(
+      question.startsWith("--> ") ? question : `--> ${question}`,
+      { signal: controller.signal },
+    );
+    const control = answer.trim().toLowerCase();
+    if (control === "a" || control === "abandon" || control === "cancel")
+      throw new PromptCancelled();
     return answer;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new PromptCancelled();
@@ -50,7 +58,7 @@ async function required(value: string | null, question: string, prompts: Termina
 }
 async function completeVersion(value: TerminalCommand, prompts: TerminalPrompts) {
   if (value.expectedVersion === null) {
-    const version = await prompts.ask("Expected revision (or cancel): ");
+    const version = await prompts.ask("Expected revision (or [a]bandon): ");
     if (!/^\d+$/.test(version)) throw new InvalidInput("Invalid expected version");
     value.expectedVersion = Number(version);
   }
@@ -60,12 +68,17 @@ async function completeVersion(value: TerminalCommand, prompts: TerminalPrompts)
 async function completeOpening(value: TerminalCommand, prompts: TerminalPrompts, today: string) {
   value.opening = await required(
     value.opening,
-    "Signed USD opening balance; cash inflow positive, outflow negative; credit debt negative (or cancel): ",
+    "Signed USD opening balance; cash inflow positive, outflow negative; credit debt negative (or [a]bandon): ",
     prompts,
   );
   if (value.date !== null) return;
   if (!prompts.interactive) throw new InvalidInput("Scripts require --as-of YYYY-MM-DD");
-  value.date = (await prompts.ask(`Posted closing balance date [${today}] (or cancel): `)) || today;
+  value.date =
+    (await prompts.ask(`Posted closing balance date [${today}] (or [a]bandon): `)) || today;
+}
+async function accountKind(value: string | null, prompts: TerminalPrompts) {
+  if (value !== null) return value;
+  return choice(prompts, "Account kind", ["cash", "credit", "tracking"], "abandon", "account-kind");
 }
 export async function completeCommand(
   command: TerminalCommand,
@@ -77,13 +90,14 @@ export async function completeCommand(
     if (value.action === "backup")
       value.database = await required(
         value.database,
-        "Database source path (or cancel): ",
+        "Database source path (or [a]bandon): ",
         prompts,
       );
-    else value.source = await required(value.source, "Backup source path (or cancel): ", prompts);
+    else
+      value.source = await required(value.source, "Backup source path (or [a]bandon): ", prompts);
     value.destination = await required(
       value.destination,
-      "New destination path (or cancel): ",
+      "New destination path (or [a]bandon): ",
       prompts,
     );
     return value;
@@ -94,17 +108,12 @@ export async function completeCommand(
   if (value.action.startsWith("transaction-") || value.action === "register")
     return completeTransaction(value, prompts, today);
   if (["show", "rename", "opening"].includes(value.action))
-    value.id = await required(value.id, "Account ID (or cancel): ", prompts);
+    value.id = await required(value.id, "Account ID (or [a]bandon): ", prompts);
   if (value.action === "rename" || value.action === "opening")
     await completeVersion(value, prompts);
   if (value.action === "add" || value.action === "rename")
-    value.name = await required(value.name, "Account name (or cancel): ", prompts);
-  if (value.action === "add")
-    value.kind = await required(
-      value.kind,
-      "Account kind: cash, credit, tracking (or cancel): ",
-      prompts,
-    );
+    value.name = await required(value.name, "Account name (or [a]bandon): ", prompts);
+  if (value.action === "add") value.kind = await accountKind(value.kind, prompts);
   if (value.kind === "tracking") {
     if (value.opening !== null || value.date !== null)
       throw new InvalidInput("Tracking accounts have no opening pair");
@@ -119,19 +128,20 @@ async function completeReconciliation(
   today: string,
 ) {
   if (value.action === "reconciliation-list") {
-    value.accountId = await required(value.accountId, "Account ID (or cancel): ", prompts);
+    value.accountId = await required(value.accountId, "Account ID (or [a]bandon): ", prompts);
     return value;
   }
   if (value.action === "reconcile") {
-    value.id = await required(value.id, "Account ID (or cancel): ", prompts);
+    value.id = await required(value.id, "Account ID (or [a]bandon): ", prompts);
     value.opening = await required(
       value.opening,
-      "Bank posted closing balance; credit debt negative (or cancel): ",
+      "Bank posted closing balance; credit debt negative (or [a]bandon): ",
       prompts,
     );
     if (value.date === null) {
       if (!prompts.interactive) throw new InvalidInput("Scripts require --as-of YYYY-MM-DD");
-      value.date = (await prompts.ask(`Reconciliation cutoff [${today}] (or cancel): `)) || today;
+      value.date =
+        (await prompts.ask(`Reconciliation cutoff [${today}] (or [a]bandon): `)) || today;
     }
     return value;
   }
@@ -141,7 +151,7 @@ export async function confirmWrite(command: TerminalCommand, prompts: TerminalPr
   if (command.confirm) return true;
   if (!prompts.interactive)
     throw new InvalidInput("Write requires --confirm in noninteractive mode");
-  return (await prompts.ask("Apply this change? [yes/no] (or cancel): ")).toLowerCase() === "yes";
+  return confirm(prompts, "Apply this change?", "write-confirmation");
 }
 
 async function completeTransaction(
@@ -150,11 +160,13 @@ async function completeTransaction(
   today: string,
 ) {
   if (value.action === "transaction-add")
-    value.accountId = await required(value.accountId, "Account ID (or cancel): ", prompts);
+    value.accountId = await required(value.accountId, "Account ID (or [a]bandon): ", prompts);
   else
     value.id = await required(
       value.id,
-      value.action === "register" ? "Account ID (or cancel): " : "Transaction ID (or cancel): ",
+      value.action === "register"
+        ? "Account ID (or [a]bandon): "
+        : "Transaction ID (or [a]bandon): ",
       prompts,
     );
   if (value.action === "register") return value;
@@ -163,7 +175,7 @@ async function completeTransaction(
     await completeTransactionFields(value, prompts, today);
   if (value.action === "transaction-clear" && value.postedOn === null) {
     if (!prompts.interactive) throw new InvalidInput("Scripts require --posted-on YYYY-MM-DD");
-    value.postedOn = (await prompts.ask(`Posting date [${today}] (or cancel): `)) || today;
+    value.postedOn = (await prompts.ask(`Posting date [${today}] (or [a]bandon): `)) || today;
   }
   return value;
 }
@@ -175,34 +187,34 @@ async function completeTransactionFields(
 ) {
   if (value.date === null) {
     if (!prompts.interactive) throw new InvalidInput("Scripts require --date YYYY-MM-DD");
-    value.date = (await prompts.ask(`Occurrence date [${today}] (or cancel): `)) || today;
+    value.date = (await prompts.ask(`Occurrence date [${today}] (or [a]bandon): `)) || today;
   }
   value.opening = await required(
     value.opening,
-    "Signed USD amount; inflow positive, outflow and credit debt negative (or cancel): ",
+    "Signed USD amount; inflow positive, outflow and credit debt negative (or [a]bandon): ",
     prompts,
   );
-  value.payee = await required(value.payee, "Payee (or cancel): ", prompts);
+  value.payee = await required(value.payee, "Payee (or [a]bandon): ", prompts);
   value.memo =
     value.action === "transaction-add"
       ? (value.memo ?? "")
-      : await required(value.memo, "Memo; empty clears it (or cancel): ", prompts);
+      : await required(value.memo, "Memo; empty clears it (or [a]bandon): ", prompts);
 }
 
 async function completeSnapshot(value: TerminalCommand, prompts: TerminalPrompts, today: string) {
   if (value.action === "snapshot-correct") {
-    value.id = await required(value.id, "Snapshot ID (or cancel): ", prompts);
+    value.id = await required(value.id, "Snapshot ID (or [a]bandon): ", prompts);
     await completeVersion(value, prompts);
-  } else value.accountId = await required(value.accountId, "Account ID (or cancel): ", prompts);
+  } else value.accountId = await required(value.accountId, "Account ID (or [a]bandon): ", prompts);
   if (value.action === "snapshot-list") return value;
   value.opening = await required(
     value.opening,
-    "Signed USD balance; assets positive, liabilities negative (or cancel): ",
+    "Signed USD balance; assets positive, liabilities negative (or [a]bandon): ",
     prompts,
   );
   if (value.action === "snapshot-add" && value.date === null) {
     if (!prompts.interactive) throw new InvalidInput("Scripts require --as-of YYYY-MM-DD");
-    value.date = (await prompts.ask(`Effective balance date [${today}] (or cancel): `)) || today;
+    value.date = (await prompts.ask(`Effective balance date [${today}] (or [a]bandon): `)) || today;
   }
   return value;
 }

@@ -4,9 +4,9 @@ A personal envelope-budgeting app for one household. Terminal first; protected f
 
 Status: Slice 1 is implemented and pending user manual review. Local accounts, manual transactions, reconciliation and correction review, dated Tracking balances, and backup/restore work from the terminal. Private storage, migrations, and automated checks are installed.
 
-Next: run the [Slice 1 manual demo](docs/slice-1-demo.md) and review the [security check record](docs/slice-1-security-checks.md). Resolve any findings before household use. Slice 2 has not been planned or started.
+Next: run the [Slice 1 manual demo](docs/slice-1-demo.md) and review the [security check record](docs/slice-1-security-checks.md). Resolve any findings before household use. Slice 2 setup migration is implemented and verified locally. User manual review is pending; see the [Slice 2 demo](docs/slice-2-demo.md).
 
-Run `npm run inab -- --help` for command status. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
+Run `npm run inab -- --help` for command status. Terminal launches show an INAB banner; JSON, scripts, and version output stay plain. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
 Start with the [document guide](docs/README.md), [project design](docs/superpowers/specs/2026-10-17-inab-design.md), and [verification plan](docs/verification.md).
 
@@ -38,9 +38,19 @@ npm run inab -- --db /absolute/private/path/plan.sqlite account opening ACCOUNT_
 
 Use the returned account ID and current revision for edits. Duplicate names remain separate accounts. Cash inflows are positive; cash outflows and credit debt are negative. Opening amounts are the bank's posted closing balance on the stated date. Currency is USD. Tracking creation uses `--kind tracking` without an opening amount or date; it shows "no balance recorded" until the first snapshot is recorded.
 
-In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `cancel`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision, same-date snapshot conflict, or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
+In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `a` or `abandon`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision, same-date snapshot conflict, or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
 
 Opening corrections reject posted entries inside the new opening period. An opening amount or date correction marks all valid reconciliations `needs-review`. The preview lists affected IDs and cutoff dates. Confirmation saves the correction, review states, and audit records together. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
+
+## Initial setup and YNAB migration
+
+After initializing an explicit private database path, run `npm run inab -- --db /absolute/private/path/plan.sqlite setup`. An interactive terminal offers start fresh or migrate from YNAB. Scripts can choose `setup fresh --confirm --json` or use `setup migrate preview --register REGISTER_CSV --plan PLAN_CSV --review NEW_PRIVATE_JSON --json`.
+
+Migration requires an empty database with setup open. Review account class, closed state, opening balances, source history, and missing evidence through the guided `setup migrate review --review PRIVATE_JSON` command. Review choices stay in a private file and can resume while the database remains empty. Scripted changes use the printed source keys and `--expected-review N`. Final `setup migrate commit --review PRIVATE_JSON --expected-review N --confirm` creates a private backup, commits everything together, and closes migration. Choosing start fresh, including the first confirmed manual account creation, also closes migration.
+
+The exports do not supply bank posting dates, split parents, account classes, or observed account balances. Source clearing labels are retained as evidence. History defaults to inspection without changing live balances; acknowledged coverage warnings remain visible. Explicit post-opening row decisions can create Cash/Credit register entries. Imported monthly values remain reference history; active budgeting is later work. Tracking observations and adjustment review are available only within import/history; general manual Tracking transactions remain future work.
+
+Use `import history accounts`, `import history register ACCOUNT_ID`, `import history plan --month YYYY-MM`, and `import history report IMPORT_ID` to inspect the result. Import/history commands require the same explicit `--db`. Later YNAB imports are refused. To migrate again, create a new database and preserve the old one. See the [synthetic demo](docs/slice-2-demo.md) for a complete runnable example. Review files and exports stay outside the checkout.
 
 ## Conventions
 

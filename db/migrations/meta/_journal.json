@@ -15,6 +15,20 @@
       "when": 1792271567958,
       "tag": "0001_reconciliation_account_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792698831650,
+      "tag": "0002_slice_2_setup_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1792698837767,
+      "tag": "0003_slice_2_setup_seed",
+      "breakpoints": true
     }
   ]
 }
