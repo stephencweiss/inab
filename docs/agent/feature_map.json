@@ -19,7 +19,8 @@
         "src/application/accounts.ts",
         "src/application/ports.ts",
         "src/storage/accounts.ts",
-        "src/storage/rows.ts"
+        "src/storage/rows.ts",
+        "src/cli/prompt-errors.ts"
       ],
       "steps": [
         {
@@ -193,7 +194,8 @@
         "src/cli/parse.ts",
         "src/cli/prompts.ts",
         "src/application/transactions.ts",
-        "src/storage/transactions.ts"
+        "src/storage/transactions.ts",
+        "src/cli/prompt-errors.ts"
       ],
       "steps": [
         {
@@ -447,7 +449,8 @@
         "src/application/accounts.ts",
         "src/storage/accounts.ts",
         "src/storage/transactions.ts",
-        "src/cli/render.ts"
+        "src/cli/render.ts",
+        "src/cli/prompt-errors.ts"
       ],
       "steps": [
         {
@@ -933,7 +936,8 @@
         "src/application/ports.ts",
         "src/storage/snapshots.ts",
         "src/storage/accounts.ts",
-        "src/storage/rows.ts"
+        "src/storage/rows.ts",
+        "src/cli/prompt-errors.ts"
       ],
       "steps": [
         {
@@ -1346,14 +1350,28 @@
       "id": "terminal.setup.migration",
       "name": "Migrate once from synthetic YNAB sources",
       "prerequisites": [
-        "New temporary database; source CSVs copied from synthetic tests/fixtures/ynab/ files. Review and recovery paths stay inside that fixture."
+        "New temporary database; source CSVs copied from synthetic tests/fixtures/ynab/ files. Review and recovery paths stay inside that fixture.",
+        "The interactive guide first explains keeping YNAB transactions as history, confirming Cash/Credit starting balances, and recording later activity in INAB. Imported row promotion is optional; Tracking uses reviewed observations and adjustments. Terminal launches show an INAB ASCII banner, omitted for scripts, JSON, and version output. These commands verify script mode without prompts. For guided review, run setup migrate review --review ${review} --interactive with the same --db. Exact synthetic answers and expected summaries are in docs/slice-2-demo.md. Tests in tests/cli/import-review.test.ts and tests/cli/setup-modes.test.ts verify terminal prompts, mode flags, save/resume, cancellation, and import confirmation.",
+        "Every guided decision offers help for a term definition (h is a shortcut except at the History action menu, where h selects history) and a/abandon to leave, regardless of case. Help repeats the same question and keeps the current default; it does not save a choice or import records. Tests also check dictionary/document agreement and case-insensitive explicit confirmations.",
+        "Menus show bracketed first-letter shortcuts only when unique and not reserved for help or abandon. Manual account creation shares the account-kind controls. Current text values offer c/confirm or replacement text; Enter also keeps the value. Saved mapping and opening prompts offer k/keep (default) and e/edit; Enter keeps saved values without a revision change. When required issues remain, r/review is the default summary action; Enter opens evidence review without saving or importing. A ready summary has no default action. Reopening the same completed review in text mode prints Migration completed without prompts or writes; matching receipt and target identity are required. Changed/replaced targets remain errors. Selected issues explain meaning, effect, and action. Duplicate account-level opening-period checks are hidden only when a row-level check remains visible; raw validation and JSON stay unchanged. Confirmed saves report cleared blockers, accepted acknowledgements with a remaining warning, and new blockers. Split-link warnings explain that no action is required. The guide shows required review steps before starting and updates addressed/remaining counts after saved choices. Conditional opening steps apply only to Cash/Credit; new evidence can change the count. Blank lines separate sections, and --> marks questions. History uses h/e/s/a or full words; help shows the definition without selecting history. Nested review menus offer b/back to return to their parent without changing saved choices. Abandon preserves saved choices and explains how to resume."
       ],
       "sourceFiles": [
         "src/cli/setup.ts",
         "src/cli/imports.ts",
         "src/application/imports.ts",
         "src/storage/imports.ts",
-        "src/cli/import-history.ts"
+        "src/cli/import-history.ts",
+        "src/cli/migration-guide.ts",
+        "src/cli/migration-guide-accounts.ts",
+        "src/cli/migration-guide-history.ts",
+        "src/cli/migration-guide-types.ts",
+        "src/cli/migration-questions.ts",
+        "src/cli/migration-choice.ts",
+        "src/cli/migration-terms.ts",
+        "src/cli/prompt-errors.ts",
+        "src/cli/migration-progress.ts",
+        "src/cli/migration-issues.ts",
+        "src/cli/welcome.ts"
       ],
       "steps": [
         {

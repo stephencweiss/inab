@@ -6,7 +6,7 @@ Status: Slice 1 is implemented and pending user manual review. Local accounts, m
 
 Next: run the [Slice 1 manual demo](docs/slice-1-demo.md) and review the [security check record](docs/slice-1-security-checks.md). Resolve any findings before household use. Slice 2 setup migration is implemented and verified locally. User manual review is pending; see the [Slice 2 demo](docs/slice-2-demo.md).
 
-Run `npm run inab -- --help` for command status. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
+Run `npm run inab -- --help` for command status. Terminal launches show an INAB banner; JSON, scripts, and version output stay plain. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
 Start with the [document guide](docs/README.md), [project design](docs/superpowers/specs/2026-10-17-inab-design.md), and [verification plan](docs/verification.md).
 
@@ -38,7 +38,7 @@ npm run inab -- --db /absolute/private/path/plan.sqlite account opening ACCOUNT_
 
 Use the returned account ID and current revision for edits. Duplicate names remain separate accounts. Cash inflows are positive; cash outflows and credit debt are negative. Opening amounts are the bank's posted closing balance on the stated date. Currency is USD. Tracking creation uses `--kind tracking` without an opening amount or date; it shows "no balance recorded" until the first snapshot is recorded.
 
-In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `cancel`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision, same-date snapshot conflict, or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
+In a terminal, omitted values prompt for input. The date prompt shows today's local calendar date. Confirm the target and old/new values, or enter `a` or `abandon`. Scripts require complete input, `--as-of` for opening balances, and `--confirm`. `--json` keeps standard output structured and sends errors to standard error. Exit codes are 0 for success or cancellation, 2 for invalid input, 3 for a missing account, 4 for a stale revision, same-date snapshot conflict, or reconciliation mismatch, and 1 for a storage failure. Each successful write returns an operation ID; a write failure reports that ID for inspection before any retry.
 
 Opening corrections reject posted entries inside the new opening period. An opening amount or date correction marks all valid reconciliations `needs-review`. The preview lists affected IDs and cutoff dates. Confirmation saves the correction, review states, and audit records together. The [account workflow map](docs/agent/feature_map.json) contains executable synthetic examples.
 

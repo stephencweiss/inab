@@ -36,5 +36,8 @@ export function createMigration(files: ImportFiles, store: ImportStore, runtime:
       }
     });
   }
-  return { ...review, commit };
+  function completed(path: string) {
+    return store.receipt(files.readReview(path)) !== null;
+  }
+  return { ...review, commit, completed };
 }

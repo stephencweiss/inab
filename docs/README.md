@@ -23,6 +23,7 @@ Status: Slice 1 is implemented and pending user manual review. Next: run the man
 | [Tracking snapshot revisions](decisions/2026-10-17-tracking-snapshot-revisions.md) | Implementation constraint: atomic account/snapshot revisions and dated last-known views |
 | [Recovery version policy](decisions/2026-10-17-recovery-version-policy.md) | Implementation constraint: current-schema recovery, validated private copies, and exclusive new targets |
 | [Account workflow map](agent/feature_map.json) | Working terminal account, transaction, reconciliation, correction review, Tracking snapshot, and recovery steps with synthetic execution checks |
+| [Migration term dictionary](term-dictionary.md) | Shared offline definitions used by migration prompt help |
 | [Verification plan](verification.md) | Required evidence, planned checks, and current enforcement status |
 | [Convention adoption decision](decisions/2026-10-17-agent-conventions.md) | What we adopted from SuChef and what we changed |
 

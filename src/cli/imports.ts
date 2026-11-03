@@ -1,5 +1,9 @@
+import { choice, text, dateAnswer, moneyAnswer, confirm } from "./migration-questions.js";
+import { formatCents } from "./render.js";
+import { guidedMigrationReview } from "./migration-guide.js";
+import type { MigrationTerm } from "./migration-terms.js";
 import type { ReviewChange } from "../application/import-ports.js";
-import { migrationApplication } from "../bootstrap.js";
+import { migrationApplication, localToday } from "../bootstrap.js";
 import { parseDate } from "../lib/date.js";
 import { parseMoney } from "../lib/money.js";
 import type { TerminalPrompts } from "./prompts.js";
@@ -86,11 +90,52 @@ const inputFlags: Record<string, string[]> = {
   resolve: ["--review", "--expected-review", "--choice"],
   acknowledge: ["--review", "--expected-review"],
 };
+async function migrationInput(
+  flag: string,
+  prompts: TerminalPrompts,
+  action: SetupCommand["action"],
+) {
+  const enums: Record<string, string[]> = {
+    "--kind": ["cash", "credit", "tracking"],
+    "--closed": ["yes", "no"],
+    "--treatment": ["history", "pending", "posted"],
+    "--choice": ["correct-data", "revise-adjustment", "defer"],
+  };
+  const values = enums[flag];
+  const topics: Record<string, MigrationTerm> = {
+    "--kind": "account-kind",
+    "--closed": "closed-account",
+    "--treatment": "row-treatment",
+    "--choice": "resolution",
+    "--register": "source-files",
+    "--plan": "source-files",
+    "--review": "review",
+    "--expected-review": "review-revision",
+    "--row": "source-row",
+  };
+  if (values) return choice(prompts, flag.slice(2), values, "abandon", topics[flag] ?? "review");
+  if (flag === "--as-of")
+    return dateAnswer(
+      prompts,
+      action === "observation" ? "Observation date" : "Closing balance date",
+      localToday(),
+      action === "observation" ? "observation-date" : "closing-balance-date",
+    );
+  if (flag === "--balance")
+    return formatCents(
+      await moneyAnswer(
+        prompts,
+        action === "observation" ? "Observed balance" : "Opening balance",
+        action === "observation" ? "observed-balance" : "opening-balance",
+      ),
+    );
+  return text(prompts, flag.slice(2), null, topics[flag] ?? "account-name");
+}
 async function completeMigration(command: SetupCommand, prompts: TerminalPrompts) {
   const completed = { ...command, flags: new Map(command.flags) };
   for (const flag of inputFlags[command.action] ?? []) {
     if (!completed.flags.has(flag) && prompts.interactive && !command.json)
-      completed.flags.set(flag, await prompts.ask(`${flag.slice(2)} (or cancel): `));
+      completed.flags.set(flag, await migrationInput(flag, prompts, command.action));
     requireSetupFlag(completed, flag);
   }
   if (
@@ -102,7 +147,7 @@ async function completeMigration(command: SetupCommand, prompts: TerminalPrompts
   )
     completed.flags.set(
       "--posted-on",
-      await prompts.ask("Bank posting date YYYY-MM-DD (or cancel): "),
+      await dateAnswer(prompts, "Bank posting date", localToday(), "posting-date"),
     );
   return completed;
 }
@@ -110,6 +155,7 @@ export async function executeMigration(
   command: SetupCommand,
   prompts: TerminalPrompts,
 ): Promise<object> {
+  if (command.interactive && !prompts.interactive) throw new Error("interactive-terminal-required");
   const completed = await completeMigration(command, prompts);
   const app = migrationApplication(command.database);
   if (completed.action === "preview")
@@ -120,8 +166,9 @@ export async function executeMigration(
     });
   const path = requireSetupFlag(completed, "--review");
   if (completed.action === "review") {
+    if (!completed.json && app.completed(path)) return { migrationCompleted: true };
     return prompts.interactive && !completed.json
-      ? guidedReview(completed, prompts)
+      ? guidedMigrationReview(completed, prompts)
       : app.inspect(path);
   }
   if (completed.action === "commit") return commitMigration(completed, prompts);
@@ -131,50 +178,9 @@ export async function executeMigration(
     process.stderr.write(
       `Review: ${path}\nTarget: ${command.database}\n${JSON.stringify(change)}\n`,
     );
-    if (
-      (await prompts.ask("Save this review change? Enter yes (or cancel): ")).toLowerCase() !==
-      "yes"
-    )
-      throw new PromptCancelled();
+    if (!(await confirm(prompts, "Save this review change?"))) throw new PromptCancelled();
   }
   return app.change(path, expected, change);
-}
-
-function parseGuidedAction(action: string) {
-  switch (action) {
-    case "account":
-    case "opening":
-    case "row":
-    case "observation":
-    case "resolve":
-    case "acknowledge":
-      return action;
-    default:
-      throw new Error("invalid-review-action");
-  }
-}
-async function guidedReview(command: SetupCommand, prompts: TerminalPrompts): Promise<object> {
-  const path = requireSetupFlag(command, "--review");
-  const app = migrationApplication(command.database);
-  for (;;) {
-    const view = app.inspect(path);
-    process.stderr.write(`${JSON.stringify(view, null, 2)}\n`);
-    const answer = (
-      await prompts.ask(
-        "Review action: account, opening, row, observation, resolve, acknowledge, or done (or cancel): ",
-      )
-    ).toLowerCase();
-    if (answer === "done") return view;
-    const action = parseGuidedAction(answer);
-    const selector = await prompts.ask(
-      "Source account, group, row, observation, or issue key (or cancel): ",
-    );
-    const flags = new Map([
-      ["--review", path],
-      ["--expected-review", String(view.revision)],
-    ]);
-    await executeMigration({ ...command, action, selector, flags }, prompts);
-  }
 }
 
 async function commitMigration(command: SetupCommand, prompts: TerminalPrompts) {
@@ -186,11 +192,7 @@ async function commitMigration(command: SetupCommand, prompts: TerminalPrompts) 
     process.stderr.write(
       `${JSON.stringify(app.inspect(path), null, 2)}\nTarget: ${command.database}\nThis completes setup and prevents later imports.\n`,
     );
-    if (
-      (
-        await prompts.ask(`Commit review revision ${expected}? Enter yes (or cancel): `)
-      ).toLowerCase() !== "yes"
-    )
+    if (!(await confirm(prompts, `Commit review revision ${expected}?`, "import-confirmation")))
       throw new PromptCancelled();
   }
   return app.commit(path, expected);

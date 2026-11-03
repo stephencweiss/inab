@@ -57,7 +57,7 @@ export async function executeSnapshot(command: TerminalCommand, prompts: Termina
     output(
       command.json,
       { ok: true, canceled: true, operationId: null, snapshot: null },
-      "Canceled",
+      "Abandoned",
     );
     return;
   }

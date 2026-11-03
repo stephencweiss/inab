@@ -20,10 +20,11 @@ export type SetupCommand = {
   selector: string | null;
   database: string;
   json: boolean;
+  interactive: boolean;
   confirm: boolean;
   flags: Map<string, string>;
 };
-const switches = new Set(["--json", "--confirm", "--new-group"]);
+const switches = new Set(["--json", "--confirm", "--new-group", "--interactive"]);
 const values = new Set([
   "--db",
   "--register",
@@ -54,7 +55,7 @@ const allowed: Record<SetupAction, string[]> = {
   status: [],
   fresh: ["--confirm"],
   preview: [...review, "--register", "--plan"],
-  review,
+  review: [...review, "--interactive"],
   account: [...change, "--name", "--kind", "--closed", "--new-group"],
   opening: [...change, "--as-of", "--balance"],
   row: [...change, "--account", "--treatment", "--posted-on", "--payee", "--role"],
@@ -71,7 +72,7 @@ function tokens(args: string[]) {
   const flags = new Map<string, string>();
   const words: string[] = [];
   for (let index = 0; index < args.length; index++) {
-    const token = args[index];
+    const token = args[index] === "-i" ? "--interactive" : args[index];
     if (!token) throw new Error("invalid-argument");
     if (!token.startsWith("--")) {
       words.push(token);
@@ -91,7 +92,7 @@ function tokens(args: string[]) {
 }
 export function isSetupArguments(args: string[]) {
   for (let index = 0; index < args.length; index++) {
-    const token = args[index] ?? "";
+    const token = args[index] === "-i" ? "--interactive" : (args[index] ?? "");
     if (switches.has(token)) continue;
     if (token.startsWith("--")) {
       index++;
@@ -164,6 +165,8 @@ export function parseSetupInteger(text: string, minimum: number) {
 export function parseSetupArguments(args: string[]): SetupCommand {
   const { flags, words } = tokens(args);
   const parsed = actionFor(words);
+  if (flags.has("--interactive") && flags.has("--json"))
+    throw new Error("interactive-json-conflict");
   for (const flag of flags.keys())
     if (![...shared, ...allowed[parsed.action]].includes(flag))
       throw new Error("invalid-command-flag");
@@ -171,5 +174,12 @@ export function parseSetupArguments(args: string[]): SetupCommand {
   if (!database?.trim()) throw new Error("explicit-db-required");
   const revision = flags.get("--expected-review");
   if (revision !== undefined) parseSetupInteger(revision, 1);
-  return { ...parsed, database, json: flags.has("--json"), confirm: flags.has("--confirm"), flags };
+  return {
+    ...parsed,
+    database,
+    json: flags.has("--json"),
+    interactive: flags.has("--interactive"),
+    confirm: flags.has("--confirm"),
+    flags,
+  };
 }

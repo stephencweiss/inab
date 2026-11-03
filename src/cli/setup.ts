@@ -1,3 +1,4 @@
+import { choice, confirm } from "./migration-questions.js";
 import { lstatSync } from "node:fs";
 import { setupApplication } from "../bootstrap.js";
 import type { TerminalPrompts } from "./prompts.js";
@@ -17,14 +18,14 @@ async function fresh(command: SetupCommand, prompts: TerminalPrompts) {
     process.stderr.write(
       `Target: ${command.database}\nStart fresh closes YNAB migration for this database.\n`,
     );
-    if ((await prompts.ask("Start fresh? Enter yes (or cancel): ")).toLowerCase() !== "yes")
-      throw new PromptCancelled();
+    if (!(await confirm(prompts, "Start fresh?", "setup"))) throw new PromptCancelled();
   }
   const result = app.chooseFresh(before.revision);
   if (!result.ok) throw new Error(result.reason);
   return result.value;
 }
 async function execute(command: SetupCommand, prompts: TerminalPrompts): Promise<object> {
+  if (command.interactive && !prompts.interactive) throw new Error("interactive-terminal-required");
   const target = lstatSync(command.database);
   if (target.isSymbolicLink() || !target.isFile()) throw new Error("invalid-path");
   if (command.action.startsWith("history-")) return executeImportHistory(command);
@@ -34,9 +35,9 @@ async function execute(command: SetupCommand, prompts: TerminalPrompts): Promise
   const status = setupApplication(command.database).status();
   if (status.state !== "open") return status;
   if (command.json || !prompts.interactive) throw new Error("explicit-setup-command-required");
-  const choice = (await prompts.ask("Initial setup: fresh or migrate (or cancel): ")).toLowerCase();
-  if (choice === "fresh") return fresh({ ...command, action: "fresh" }, prompts);
-  if (choice === "migrate") return executeMigration({ ...command, action: "preview" }, prompts);
+  const selected = await choice(prompts, "Initial setup", ["fresh", "migrate"], "abandon", "setup");
+  if (selected === "fresh") return fresh({ ...command, action: "fresh" }, prompts);
+  if (selected === "migrate") return executeMigration({ ...command, action: "preview" }, prompts);
   throw new Error("invalid-setup-choice");
 }
 function parseFailure(error: unknown) {
@@ -67,13 +68,35 @@ function parseFailure(error: unknown) {
     return { reason, code: 3, operationId };
   return { reason, code: reason === "storage-failure" ? 1 : 2, operationId };
 }
+function reportAbandoned(json: boolean, reviewing: boolean) {
+  if (json) {
+    output(json, { canceled: true });
+    return;
+  }
+  process.stdout.write(
+    reviewing
+      ? "Review abandoned. Saved choices are kept. Run the same review command to resume.\n"
+      : "Abandoned\n",
+  );
+}
+function reportResult(command: SetupCommand, result: object, interactive: boolean) {
+  if (!command.json && "migrationCompleted" in result && result.migrationCompleted === true)
+    process.stdout.write("Migration completed\n");
+  else if (command.action === "review" && interactive && !command.json)
+    process.stdout.write("Migration review session ended.\n");
+  else output(command.json, result);
+}
 export async function runSetupArguments(args: string[], prompts: TerminalPrompts) {
+  let reviewing = false;
   const json = args.includes("--json");
   try {
-    output(json, await execute(parseSetupArguments(args), prompts));
+    const command = parseSetupArguments(args);
+    reviewing = command.action === "review";
+    const result = await execute(command, prompts);
+    reportResult(command, result, prompts.interactive);
   } catch (error) {
     if (error instanceof PromptCancelled) {
-      output(json, { canceled: true });
+      reportAbandoned(json, reviewing);
       return;
     }
     const failed = parseFailure(error);

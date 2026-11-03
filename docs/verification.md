@@ -83,3 +83,53 @@ The [Slice 2 demo](slice-2-demo.md) runs the built CLI from a separate temporary
 Import sources and review files require explicit private paths outside the checkout. Resource limits and strict CSV/review schemas are tested. Source statuses remain distinct from posting evidence. Missing transfer/split relationships are warnings, and historical source totals remain distinct from live balance effects and revised adjustments. Date/amount/payee hashes do not define transaction identity.
 
 The two new migrations install setup/import storage and reviewed relationship/evidence guards. Current schema version is 4, derived from the validated migration ledger. Prior-schema upgrades retain accounts and audit history, classify an existing household as start-fresh complete, and preserve recovery backups. No reset operation or automatic household import is installed.
+
+### Guided migration review
+
+The terminal review walks source accounts by name, asks for explicit account kinds and closed states, guides opening and history choices, and presents a separate import confirmation. `--interactive` and `-i` require a terminal; a terminal review defaults to guidance. `--json` stays prompt-free and conflicts with explicit interactive mode. Complete script commands remain supported.
+
+Tests cover accepted choices and retry, cancellation without partial choices, multi-account progress, saved choices, concurrent review rejection, numbered rows, missing mappings, future-date exits, source and monthly conflict context, Tracking evidence and deferral, exact-cent display, and separate final import confirmation. The October 29, 2026 full check passed 553 tests in 56 files; the built synthetic demo also passed. The [manual guide](slice-2-demo.md) gives exact paths, setup commands, prompt answers, and expected summary values. User manual review remains pending.
+
+### Migration term help
+
+The [term dictionary](term-dictionary.md) shares its definitions with the built CLI. A test checks that the document and definitions agree. All migration decisions offer `h` / `help` and `a` / `abandon`, ignoring case. Help shows the relevant definition and repeats the same question without changing its default or saving choices. Confirmation shortcuts accept `Y/y` and `N/n`; ambiguous enum initials are rejected. Final import confirmation still has no default yes.
+
+Tests cover each question type, setup and fresh-start guidance, private review-file help, opening and Tracking date/balance topics, unchanged revisions during help, preserved defaults, explicit confirmation after help, and script compatibility. The October 30, 2026 full check passed 659 tests in 58 files; the built synthetic migration demo also passed. Manual user review remains pending.
+
+### Consistent abandonment controls
+
+All displayed terminal exit options use abandon. Manual write confirmations share the migration question controls and accept `y` / `yes`, `n` / `no`, and `a` / `abandon`, ignoring case. Manual final writes keep explicit confirmation without a default. Existing migration save defaults remain unchanged. Real terminal tests cover controls, Ctrl-C, EOF, and preservation of raw name/payee/memo input. Human exit messages say Abandoned; script response fields remain compatible.
+
+The October 30, 2026 prompt audit found no displayed cancel option. `npm run check` passed 700 tests in 59 files, and the built synthetic migration demo passed. The [manual guide](slice-2-demo.md) explains restarting older running sessions without losing confirmed review choices.
+
+### Review progress and layout
+
+The guide lists required review steps before the first question and shows addressed/remaining counts after each saved choice. Duplicate mapping blockers are grouped by source account. Before kinds are known, opening steps are explicitly conditional on Cash/Credit. Counts can change with new evidence, and warnings are separate. Blank lines separate sections, headings come first, and `-->` marks questions.
+
+The History menu explains its actions: history keeps row choices and accepts the coverage warning; edit changes a source row; save returns to the summary without a new acknowledgement or import. Here `h` selects history and full-word `help` displays the definition. Tests cover case-insensitive h/e/s/a, help without a save, section order, singular step wording, and returning to summary before another account's opening prompts. The final October 30, 2026 check passed 730 tests in 60 files; the built synthetic demo also passed.
+
+### Review Back navigation
+
+Nested review menus offer case-insensitive `b` / `back` to return to their parent. Back leaves confirmed choices and the review revision unchanged. Initial guide steps and free-text/date/amount fields keep their current controls. Abandon exits, keeps saved choices, and explains how to resume with the same review command and file. Script and JSON responses are unchanged.
+
+Tests cover the Observations-to-Evidence-to-summary path with a real private review file, empty adjustment lists, account and row selection, History from warnings, monthly conflicts, and deeper observation edits. The October 30, 2026 full repository check passed 754 tests in 60 files; the built synthetic demo passed. Independent review approved the corrected parent routes. The [manual guide](slice-2-demo.md) explains how to resume an older running session.
+
+### CLI shortcut audit
+
+All terminal menu sites were reviewed. Shared menu hints mark unique alphabetic first letters, with h reserved for help and a for abandon; numeric selectors and ambiguous initials keep their full values. Dedicated start, closed, save, and History controls remain explicit. Manual account creation now uses the same account-kind menu. IDs, paths, dates, revisions, and amounts keep their input formats; script subcommands and flags are unchanged.
+
+Current text values offer c/confirm or replacement text, ignoring case for controls. Enter keeps the current value. Help repeats the same prompt, and save remains separate. With no current value, c remains ordinary input. Tests cover every menu pattern, reserved and ambiguous initials, manual Tracking selection, current text confirmation, replacements, and help. The October 30, 2026 full check passed 780 tests in 60 files; the built synthetic demo passed. Independent review found no remaining gaps.
+
+### Explain migration issues and saved outcomes
+
+Selected opening-date conflicts show the affected transaction posting date, account opening date, effect, and evidence-based correction choices. A repeated account-level conflict is hidden only while its row-level diagnostic remains visible; standalone checks remain. Summary, issue selection, and progress share that visible list. Raw validation, JSON, import reports, and commit checks are unchanged.
+
+History acknowledgement is explained as acceptance of an export limit, with the warning remaining. Missing split links are an informational limitation and do not assert that splits exist. After a confirmed save, the guide reports cleared blockers, accepted acknowledgements, and new blockers. Tests cover standalone overlaps hidden behind a missing-payee check and genuinely new conflicts introduced by a second row.
+
+The October 30, 2026 final repository check passed 805 tests in 60 files. The built synthetic demo passed, and independent review approved the final behavior. All source data and databases used for verification were synthetic. User manual review remains separate.
+
+### Migration orientation and terminal welcome
+
+The interactive guide explains the normal path before its first question: retain YNAB history for inspection, confirm Cash/Credit starting posted balances, and use INAB for later activity. It explains pending balances, optional promotion of imported rows, and Tracking observations/adjustments. History and opening sections reinforce that path. Saved row choices remain until explicitly edited.
+
+Terminal launches display an INAB ASCII banner on stderr. Noninteractive, JSON, and version output omit it. Tests exercise the actual CLI entry point with terminal state, verify banner output once, and check plain JSON/version output. The November 2, 2026 full repository check passed 813 tests in 61 files; the built synthetic migration demo passed. No migration rules or household data were changed.

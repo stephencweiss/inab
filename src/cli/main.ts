@@ -1,3 +1,4 @@
+import { cliVersion, terminalWelcome } from "./welcome.js";
 import { isSetupArguments } from "./setup-parse.js";
 import { runSetupArguments } from "./setup.js";
 import { RecoveryStorageError } from "../application/backup.js";
@@ -33,7 +34,7 @@ Available:
   setup status
   setup fresh --confirm
   setup migrate preview --register FILE --plan FILE --review NEW_FILE
-  setup migrate review --review FILE
+  setup migrate review --review FILE [--interactive|-i | --json]
   setup migrate account SOURCE --review FILE --name NAME --kind cash|credit|tracking --closed yes|no [--new-group] --expected-review N
   setup migrate opening GROUP --review FILE --as-of DATE --balance USD --expected-review N
   setup migrate row ROW --review FILE --treatment history|pending|posted [--account GROUP] [--posted-on DATE] [--payee TEXT] [--role transaction|adjustment|opening] --expected-review N
@@ -68,7 +69,10 @@ Available:
 Use --currency USD on account add. IDs select accounts; names do not.
 Cash inflow is positive; cash outflow and credit debt are negative.
 In a terminal, the opening date prompt shows today's local date. Scripts require --as-of.
-Writes show a preview. Enter cancel to stop a prompt. Scripts require --confirm.
+Writes show a preview. Enter a or abandon to leave a prompt. Confirmations accept y/yes or n/no, regardless of case. Scripts require --confirm.
+
+Migration review starts a guide in a terminal. --interactive (or -i) requires a terminal.
+Use --json for review data without prompts. Do not combine --interactive and --json.
 
 Backup uses --db PATH. Restore uses --from BACKUP_PATH and does not accept --db.
 `;
@@ -177,7 +181,7 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
     output(
       command.json,
       { ok: true, canceled: true, operationId: null, account: null },
-      "Canceled",
+      "Abandoned",
     );
     return;
   }
@@ -190,7 +194,7 @@ async function execute(command: TerminalCommand, prompts: ReturnType<typeof term
 }
 function reportFailure(error: Error | object, json: boolean) {
   if (error instanceof PromptCancelled) {
-    output(json, { ok: true, canceled: true, operationId: null, account: null }, "Canceled");
+    output(json, { ok: true, canceled: true, operationId: null, account: null }, "Abandoned");
     return;
   }
   if (json && error instanceof RecoveryStorageError) {
@@ -202,12 +206,13 @@ function reportFailure(error: Error | object, json: boolean) {
 }
 async function main() {
   const args = process.argv.slice(2);
+  process.stderr.write(terminalWelcome(Boolean(process.stdin.isTTY && process.stderr.isTTY), args));
   if (args.length === 1 && args[0] === "--help") {
     process.stdout.write(help);
     return;
   }
   if (args.length === 1 && args[0] === "--version") {
-    process.stdout.write("0.0.0\n");
+    process.stdout.write(`${cliVersion}\n`);
     return;
   }
   const prompts = terminalPrompts();
