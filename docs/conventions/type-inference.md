@@ -2,8 +2,6 @@
 
 Status: required implementation standard. Strict TypeScript, redundant-type checks, and unnecessary assertion checks and their policy tests are active.
 
-Adapted from SuChef's type inference convention.
-
 Let TypeScript infer local values and callback parameters. Write types for public contracts, function parameters, empty collections, and values that need a wider type. Do not repeat an inferred union or use a type predicate when a boolean check is enough.
 
 Prefer a parser or guard over a cast. A cast must have a reason that the surrounding code or a short JSDoc block makes clear. Do not use `any` or double assertions to avoid a type error.

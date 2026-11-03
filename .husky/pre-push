@@ -1,0 +1,2 @@
+#!/bin/sh
+exec ./node_modules/.bin/tsx scripts/check-git-state.ts push-hook

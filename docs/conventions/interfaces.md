@@ -2,8 +2,6 @@
 
 Status: required implementation standard. The scoped interface lint rules and their policy tests are active. Import boundary checks are active.
 
-Adapted from SuChef's interfaces convention.
-
 Application-owned values have all required fields. Use `null` for an absent value. Use a tagged union when states have different fields. Do not use optional properties or `undefined` to hide a missing decision.
 
 Parse external input once at its boundary. CSV, provider JSON, terminal arguments, and later web requests are untrusted data. Parsers return either a validated value or structured errors. Budget functions accept validated values, not raw provider responses or `unknown`.
@@ -14,4 +12,4 @@ Do not change external SDK contracts to make them resemble ours. Normalize them 
 
 Add factories only when callers need them. Keep each factory beside its owned type. Do not use casts to bypass validation.
 
-The installed `inab` rules reject optional properties and `undefined` in types. They reject direct and nested `unknown` parameter annotations outside a `parse` or `validate` function or the checked parameter of a type guard. Raw input exceptions stop at function boundaries; validated method outputs must remain complete. The unknown rule checks written annotations; it does not resolve type aliases. A function name does not prove that the function validates its input. Import boundary checks are active; parser tests remain planned. SuChef exceptions for form data and every file in `src/lib` are not copied.
+The installed `inab` rules reject optional properties and `undefined` in types. They reject direct and nested `unknown` parameter annotations outside a `parse` or `validate` function or the checked parameter of a type guard. Raw input exceptions stop at function boundaries; validated method outputs must remain complete. The unknown rule checks written annotations; it does not resolve type aliases. A function name does not prove that the function validates its input. Import boundary checks are active; parser tests remain planned. Form data and shared helpers use the same scoped rules.

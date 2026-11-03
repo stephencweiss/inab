@@ -2,8 +2,6 @@
 
 Status: required implementation standard; map and automated checks start with the first working workflow.
 
-Adapted from SuChef's feature map and update conventions.
-
 Maintain one hand-edited map at `docs/agent/feature_map.json`. Record implemented user goals, not planned features or helper functions. Do not create the map until a workflow exists.
 
 For each terminal workflow, record a stable ID, a plain-language name, fixture prerequisites, exact commands and prompt answers, relevant source files, expected exit status, and visible success and failure signals. Commands must use a temporary database and synthetic data. Never put account details or credentials in the map.

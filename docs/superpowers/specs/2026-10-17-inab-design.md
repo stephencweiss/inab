@@ -27,7 +27,7 @@ Keep running costs and maintenance low. Each build slice must produce a working 
 - Classify transactions with saved rules, past decisions, local model suggestions, and human review.
 - Add Amazon item details and transaction splits, using Reconcile as reference material.
 - Keep the terminal interface first. Add the family web interface later.
-- Adapt relevant SuChef conventions and enforce them through lint, type checks, tests, and CI as the application takes shape.
+- Enforce INAB conventions through lint, type checks, tests, and CI as the application takes shape.
 
 ## Starting evidence
 
@@ -63,7 +63,7 @@ The budget currency is USD, confirmed October 17, 2026. Store monetary values as
 
 Keep private exports, databases, browser profiles, model inputs, and credentials outside version control. Use small synthetic fixtures for public tests. Before the first commit, create ignore rules and check the staged files.
 
-Use the [document guide](../../README.md) for document authority and the [verification guide](../../verification.md) for enforcement status. The [convention adoption decision](../../decisions/2026-10-17-agent-conventions.md) records what was copied or adapted from SuChef.
+Use the [document guide](../../README.md) for document authority and the [verification guide](../../verification.md) for enforcement status. The [convention adoption decision](../../decisions/2026-10-17-agent-conventions.md) records the scope and enforcement of INAB agent conventions.
 
 ## Budget language and rules
 (We should pull this into a doc/ as part of a general knowledge base so that we know we can always reference back to it and we're consistent in our use of terminology)

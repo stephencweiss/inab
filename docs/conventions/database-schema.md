@@ -2,8 +2,6 @@
 
 Status: required implementation standard; automated enforcement is planned.
 
-Adapted from SuChef's database schema convention for Drizzle and SQLite. PostgreSQL grants are not used.
-
 Record schema changes as ordered migrations in source control. Review their SQL. Never edit a migration already applied to a persistent database; add another migration.
 
 Drizzle TypeScript table definitions are the schema authority. List every schema file explicitly in `drizzle.config.ts`; do not use a glob or a barrel to hide new files. Use the SQLite dialect. Verify that all schema files are included.
