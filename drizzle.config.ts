@@ -12,5 +12,9 @@ export default defineConfig({
     "./src/storage/schema/import-sources.ts",
     "./src/storage/schema/import-history.ts",
     "./src/storage/schema/import-observations.ts",
+    "./src/storage/schema/budget.ts",
+    "./src/storage/schema/categories.ts",
+    "./src/storage/schema/allocations.ts",
+    "./src/storage/schema/transfers.ts",
   ],
 });

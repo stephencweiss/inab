@@ -1,3 +1,5 @@
+import { createBudget } from "./application/budget.js";
+import { createBudgetStore } from "./storage/budget.js";
 import { createSetup } from "./application/setup.js";
 import { createSetupStore } from "./storage/setup.js";
 import { createMigration } from "./application/imports.js";
@@ -78,3 +80,22 @@ export function migrationApplication(path: string) {
 export function importHistoryApplication(path: string) {
   return createImportHistory(createImportHistoryStore(path));
 }
+
+export function budgetApplication(path: string) {
+  return createBudget(createBudgetStore(path), {
+    id: randomUUID,
+    now: () => new Date().toISOString(),
+    today: localToday,
+  });
+}
+import { createBudgetReviewFiles } from "./adapters/budget/review-file.js";
+import { parseBudgetFacts } from "./budget/parse.js";
+export const {
+  createBudgetReview,
+  readBudgetReview,
+  updateBudgetReview,
+  withBudgetReviewLock,
+  writeBudgetReview,
+} = createBudgetReviewFiles(parseBudgetFacts);
+export { parseBudgetCoverage } from "./adapters/budget/review-file.js";
+export type { BudgetReview } from "./adapters/budget/review-file.js";

@@ -29,6 +29,27 @@
       "when": 1792698837767,
       "tag": "0003_slice_2_setup_seed",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1793933000168,
+      "tag": "0004_slice_3_budget",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793933778509,
+      "tag": "0005_slice_3_relationship_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793934877628,
+      "tag": "0006_slice_3_source_membership",
+      "breakpoints": true
     }
   ]
 }

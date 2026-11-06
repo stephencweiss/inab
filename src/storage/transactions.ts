@@ -11,9 +11,11 @@ import { parseAccountRow, parseManualTransactionRow } from "./rows.js";
 import { accounts } from "./schema/accounts.js";
 import { transactions } from "./schema/transactions.js";
 import { changes } from "./schema/changes.js";
+import { budgetTransactionGuard, touchBudgetTransaction } from "./budget-hooks.js";
 type Connection = ReturnType<typeof openDatabase>;
 type Queries = Pick<Connection["db"], "select" | "insert" | "update">;
 function save(db: Queries, preview: TransactionPreview) {
+  touchBudgetTransaction(db, preview);
   invalidateReconciliations(
     db,
     preview.affectedReconciliations,
@@ -40,6 +42,7 @@ function save(db: Queries, preview: TransactionPreview) {
 }
 function sessionFor(db: Queries): TransactionSession {
   return {
+    budgetGuard: (before, after) => budgetTransactionGuard(db, before, after),
     reconciliations: (id) => readReconciliations(db, id),
     account: (id) => {
       const row = db.select().from(accounts).where(eq(accounts.id, id)).get();

@@ -1,7 +1,7 @@
 # INAB project design and build roadmap
 
 Date: October 17, 2026
-Status: Slice 1 is implemented and pending user manual review. This document records agreed scope and proposed later build steps. Slice 2 setup migration is implemented and verified locally; user manual review is pending.
+Status: local account and setup migration slices are implemented. The user reports migration complete. Slice 3 budget workflows are implemented with manual review pending; see its [progress record](../plans/2026-11-05-slice-3-progress.md).
 
 ## Purpose
 
@@ -180,6 +180,8 @@ Done when: source row counts and totals can be traced; interrupted setup can res
 
 ### Slice 3 — Activate and run an envelope budget
 
+Planning update November 4, 2026: the user reports local migration complete and confirms earlier-month activation support. The user approved implementation November 5. The [Slice 3 design](2026-11-04-slice-3-envelope-budget-design.md), [plan](../plans/2026-11-04-slice-3-envelope-budget.md), and [budget rules](../../decisions/2026-11-04-envelope-budget-rules.md) define the supported behavior.
+
 Workflow: choose a start month, verify opening state, create/edit categories, assign money, categorize spending, move money, and view the result.
 
 Include Cash/Credit/Tracking behavior, transfers, and card payment reserves. Work from manual accounts or imported history; YNAB import is optional. Preserve imported historical records during active changes. Validate opening account balances, category balances, and Ready to Assign at the selected boundary.
@@ -254,17 +256,13 @@ Settled for Slice 1: TypeScript/Node.js with Drizzle ORM, better-sqlite3, SQLite
 
 Slice 2 preserves row-level split evidence because the inspected exports supply no parent IDs. The implemented review/report contracts are in the [Slice 2 design](2026-10-22-slice-2-bootstrap-import-design.md). Setup eligibility is agreed: an empty database with setup incomplete. YNAB import is setup-only; manual overlap matching belongs to future Plaid work.
 
-Resolve before Slice 3: exact month-boundary rules, pending/future entry treatment, and opening-state validation.
+Slice 3 date, rollover, pending, future-assignment, and opening-state rules are recorded in the [budget decision](../../decisions/2026-11-04-envelope-budget-rules.md).
 
 Resolve later: recurring entries and targets, local model hardware, per-person web logins, hosting, remote access to local integrations, and release license.
 
 ## Next step
 
-Run the [Slice 1 manual demo](../../slice-1-demo.md) with synthetic data and review the [security record](../../slice-1-security-checks.md). Check account balances, correction review, Tracking observations, and recovery before household use. Record the user review result and resolve any issue. The [Slice 1 implementation plan](../plans/2026-10-17-slice-1-manual-accounts.md) records the work and checks.
-
-Slice 1 is implemented; user manual review is pending. Current changes have not been pushed or run on Linux. CI configuration exists, and an older remote revision passed CI. Main branch protection is absent. Four accepted moderate development dependency findings remain; see the security record for scope and evidence.
-
-Do not start Slice 2 automatically. After the user reviews Slice 1, agree its import scope and write a separate implementation plan.
+Run the [Slice 3 synthetic demo](../../slice-3-demo.md), review the budget examples and terminal behavior, and record user findings before household activation. The [progress record](../plans/2026-11-05-slice-3-progress.md) separates local evidence from manual review. Later Plaid planning remains a separate slice. Prior security and remote-enforcement limits remain recorded in the verification guide and Slice 1 security record.
 
 ## References
 

@@ -10,6 +10,7 @@ import { parseAccountRow, parseManualTransactionRow } from "./rows.js";
 import { accounts } from "./schema/accounts.js";
 import { changes } from "./schema/changes.js";
 import { transactions } from "./schema/transactions.js";
+import { touchBudgetAccount } from "./budget-hooks.js";
 
 type Connection = ReturnType<typeof openDatabase>;
 type Queries = Pick<Connection["db"], "select" | "insert" | "update" | "all">;
@@ -41,6 +42,7 @@ function sessionFor(db: Queries): AccountSession {
   };
 }
 function save(db: Queries, value: AccountPreview) {
+  touchBudgetAccount(db, value);
   if (value.before === null && setupStatusFrom(db).state === "open") {
     assertEmptySetup(db);
     markSetupComplete(db, "fresh", null, value.recordedAt);

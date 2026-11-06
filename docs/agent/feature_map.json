@@ -29,7 +29,7 @@
           "promptAnswers": [],
           "exitStatus": 0,
           "captureAccount": false,
-          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":4"],
+          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":7"],
           "stderrContains": []
         },
         {
@@ -1172,7 +1172,7 @@
           "promptAnswers": [],
           "exitStatus": 0,
           "captureAccount": false,
-          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":4"],
+          "stdoutContains": ["\"ok\":true", "\"schemaVersion\":7"],
           "stderrContains": []
         },
         {
@@ -1283,7 +1283,7 @@
           "stdoutContains": [
             "\"ok\":true",
             "\"destination\":\"${backup}\"",
-            "\"schemaVersion\":4",
+            "\"schemaVersion\":7",
             "\"migrationNeeded\":false"
           ],
           "stderrContains": ["Backup source: ${database}", "New destination: ${backup}"]
@@ -1297,7 +1297,7 @@
           "stdoutContains": [
             "\"ok\":true",
             "\"destination\":\"${restored}\"",
-            "\"schemaVersion\":4"
+            "\"schemaVersion\":7"
           ],
           "stderrContains": ["Restore source: ${backup}", "New destination: ${restored}"]
         },
@@ -1382,7 +1382,7 @@
           "captureAccount": false,
           "captureReview": false,
           "captureImport": false,
-          "stdoutContains": ["\"schemaVersion\":4"],
+          "stdoutContains": ["\"schemaVersion\":7"],
           "stderrContains": []
         },
         {
@@ -1671,7 +1671,7 @@
           "captureAccount": false,
           "captureReview": false,
           "captureImport": false,
-          "stdoutContains": ["\"schemaVersion\":4"],
+          "stdoutContains": ["\"schemaVersion\":7"],
           "stderrContains": []
         },
         {
@@ -1680,7 +1680,7 @@
           "promptAnswers": [],
           "exitStatus": 0,
           "captureAccount": false,
-          "stdoutContains": ["\"schemaVersion\":4"],
+          "stdoutContains": ["\"schemaVersion\":7"],
           "stderrContains": []
         },
         {
@@ -1708,7 +1708,7 @@
           "captureAccount": false,
           "captureReview": false,
           "captureImport": false,
-          "stdoutContains": ["\"schemaVersion\":4"],
+          "stdoutContains": ["\"schemaVersion\":7"],
           "stderrContains": []
         },
         {
@@ -1755,6 +1755,275 @@
           "captureReview": false,
           "captureImport": false,
           "stdoutContains": ["\"accounts\":[]"],
+          "stderrContains": []
+        }
+      ]
+    },
+    {
+      "id": "terminal.budget.manage",
+      "name": "Activate a budget, assign funds, allocate spending, and restore the result",
+      "prerequisites": [
+        "Use a new temporary database and private review file outside the checkout. All values are synthetic.",
+        "The harness supplies the local today and currentMonth, captures account and transaction IDs, and removes all temporary files.",
+        "Activation starts with an explicit statement and complete activity review. Scripts do not prompt."
+      ],
+      "sourceFiles": [
+        "src/cli/budget.ts",
+        "src/cli/budget-activation.ts",
+        "src/application/budget.ts",
+        "src/storage/budget.ts",
+        "src/storage/budget-hooks.ts",
+        "src/budget/calculate.ts"
+      ],
+      "steps": [
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "init", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"schemaVersion\":7"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "account",
+            "add",
+            "--name",
+            "Synthetic budget cash",
+            "--kind",
+            "cash",
+            "--opening",
+            "1000.00",
+            "--as-of",
+            "2026-09-30",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": true,
+          "stdoutContains": ["\"openingCents\":100000"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "activation",
+            "start",
+            "--month",
+            "${currentMonth}",
+            "--review",
+            "${budgetReview}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"facts\":null"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "activation",
+            "set",
+            "--review",
+            "${budgetReview}",
+            "--expected-review",
+            "1",
+            "--decision",
+            "{\"kind\":\"facts\",\"facts\":{\"startMonth\":\"${currentMonth}\",\"currency\":\"USD\",\"opening\":{\"accounts\":[{\"accountId\":\"${accountId}\",\"kind\":\"cash\",\"balanceCents\":100000,\"closed\":false,\"evidence\":\"Synthetic statement\"}],\"categories\":[{\"categoryId\":\"food\",\"availableCents\":0,\"evidence\":\"Confirmed zero\"}],\"readyToAssignCents\":100000,\"evidence\":\"Synthetic opening\",\"deficitAcknowledged\":false},\"categories\":[{\"id\":\"food\",\"groupId\":\"living\",\"name\":\"Food\",\"archived\":false,\"cardAccountId\":null}],\"assignments\":[{\"month\":\"${currentMonth}\",\"categoryId\":\"food\",\"amountCents\":0}],\"events\":[]},\"coverage\":{\"throughDate\":\"${today}\",\"evidence\":\"Complete synthetic activity\",\"includedTransactionIds\":[],\"postedBridgeEventIds\":[]}}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "activation",
+            "preview",
+            "--review",
+            "${budgetReview}",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"revision\":3"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "activation",
+            "commit",
+            "--review",
+            "${budgetReview}",
+            "--expected-review",
+            "3",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"revision\":1", "\"reused\":false"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "assign",
+            "--month",
+            "${currentMonth}",
+            "--category",
+            "food",
+            "--amount",
+            "200.00",
+            "--expected-version",
+            "1",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"revision\":2"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "transaction",
+            "add",
+            "--account",
+            "${accountId}",
+            "--date",
+            "${today}",
+            "--amount",
+            "-60.00",
+            "--payee",
+            "Synthetic shop",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"cents\":-6000"],
+          "stderrContains": [],
+          "captureTransaction": true
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "allocate",
+            "${transactionId}",
+            "--category",
+            "food",
+            "--expected-transaction-version",
+            "${transactionRevision}",
+            "--expected-version",
+            "3",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"revision\":4"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "budget", "show", "--month", "${currentMonth}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": [
+            "\"readyToAssignCents\":80000",
+            "\"availableCents\":14000",
+            "\"complete\":true"
+          ],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": [
+            "--db",
+            "${database}",
+            "budget",
+            "assign",
+            "--month",
+            "${currentMonth}",
+            "--category",
+            "food",
+            "--amount",
+            "900.00",
+            "--expected-version",
+            "1",
+            "--confirm",
+            "--json"
+          ],
+          "promptAnswers": [],
+          "exitStatus": 4,
+          "captureAccount": false,
+          "stdoutContains": [],
+          "stderrContains": ["stale-version"]
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${database}", "backup", "--to", "${backup}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"migrationNeeded\":false"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["restore", "--from", "${backup}", "--to", "${restored}", "--confirm", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"migrationNeeded\":false"],
+          "stderrContains": []
+        },
+        {
+          "command": "node --import tsx src/cli/main.ts",
+          "args": ["--db", "${restored}", "budget", "show", "--month", "${currentMonth}", "--json"],
+          "promptAnswers": [],
+          "exitStatus": 0,
+          "captureAccount": false,
+          "stdoutContains": ["\"readyToAssignCents\":80000", "\"availableCents\":14000"],
           "stderrContains": []
         }
       ]

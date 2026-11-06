@@ -1,3 +1,4 @@
+import { currentSchemaVersion } from "../helpers/schema-version.js";
 import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
@@ -29,7 +30,7 @@ it("backs up and restores through explicit paths and structured results without 
     ok: true,
     source: f.path,
     destination: backup,
-    schemaVersion: 4,
+    schemaVersion: currentSchemaVersion,
     migrationNeeded: false,
   });
   expect(JSON.parse(b.stdout).operationId).toEqual(expect.any(String));

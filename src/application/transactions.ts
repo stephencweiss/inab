@@ -65,6 +65,8 @@ function validateChange(
   today: string,
 ): TransactionResult<ManualTransaction> {
   if (account.kind === "tracking") return { ok: false, reason: "tracking-register" };
+  const budgetFailure = session.budgetGuard(session.get(after.id), after);
+  if (budgetFailure !== null) return { ok: false, reason: budgetFailure };
   if (
     !parseTransactionInput(after).ok ||
     !Number.isSafeInteger(after.revision) ||

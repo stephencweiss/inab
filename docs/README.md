@@ -1,11 +1,17 @@
 # INAB document guide
 
-Status: Slice 1 is implemented and pending user manual review. Next: run the manual demo and review its results and the security record. Slice 2 setup migration is implemented and verified locally. User manual review is pending; see the Slice 2 demo.
+Status: local accounts and setup migration are implemented. The user reports local migration complete. Slice 3 budget workflows are implemented; manual review is pending. Start with the Slice 3 demo and accounting examples.
 
 ## Read these first
 
 | Document | Authority |
 | --- | --- |
+| [Slice 3 demo](slice-3-demo.md) | Synthetic activation, allocation, card, correction, month, and recovery workflows |
+| [Budget examples](budget-examples.md) | Exact synthetic accounting results |
+| [Budget rules](decisions/2026-11-04-envelope-budget-rules.md) | Accepted date, opening, Cash/Credit, reserve, and month rules |
+| [Slice 3 progress](superpowers/plans/2026-11-05-slice-3-progress.md) | Implementation evidence and remaining manual review |
+| [Slice 3 budget design](superpowers/specs/2026-11-04-slice-3-envelope-budget-design.md) | Approved budget activation, opening evidence, and accounting scope |
+| [Slice 3 implementation plan](superpowers/plans/2026-11-04-slice-3-envelope-budget.md) | Ordered implementation tasks and execution status |
 | [Project design](superpowers/specs/2026-10-17-inab-design.md) | Agreed product scope, proposed architecture, and build sequence |
 | [Slice 1 manual demo](slice-1-demo.md) | Runnable synthetic workflow, expected results, and user review checklist |
 | [Slice 1 security record](slice-1-security-checks.md) | Automated security evidence and current limits |

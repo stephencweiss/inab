@@ -1,3 +1,4 @@
+import { currentSchemaVersion } from "../helpers/schema-version.js";
 import Database from "better-sqlite3";
 import {
   cpSync,
@@ -119,7 +120,7 @@ it("preserves all records, IDs, revisions, audit and ledger across backup, resto
   expect(value(await app.commit(preview))).toMatchObject({
     source: f.path,
     destination: backup,
-    schemaVersion: 4,
+    schemaVersion: currentSchemaVersion,
     migrationNeeded: false,
     operationId: preview.operationId,
   });
@@ -216,14 +217,14 @@ it.each(["corrupt", "unrelated", "newer", "changed", "older", "foreign-key"])(
       if (kind === "newer")
         expect(result).toMatchObject({
           reason: "schema-version",
-          schemaVersion: 5,
-          requiredSchemaVersion: 4,
+          schemaVersion: currentSchemaVersion + 1,
+          requiredSchemaVersion: currentSchemaVersion,
         });
       if (kind === "older")
         expect(result).toMatchObject({
           reason: "schema-version",
           schemaVersion: 1,
-          requiredSchemaVersion: 4,
+          requiredSchemaVersion: currentSchemaVersion,
         });
     });
     expect(readFileSync(path)).toEqual(before);
@@ -414,7 +415,7 @@ it("reports recorded ledger count and supported schema for changed history witho
   const result = app.preview("restore", f.path, join(f.directory, "new.sqlite"));
   expect(result).toMatchObject({ ok: false, reason: "invalid-backup" });
   if (result.ok) throw new Error("Expected refusal");
-  expect(result.message).toContain("recorded ledger count 4");
-  expect(result.message).toContain("supports schema version 4");
+  expect(result.message).toContain(`recorded ledger count ${currentSchemaVersion}`);
+  expect(result.message).toContain(`supports schema version ${currentSchemaVersion}`);
   expect(readFileSync(f.path)).toEqual(before);
 });

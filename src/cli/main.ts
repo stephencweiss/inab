@@ -1,3 +1,5 @@
+import { isBudgetArguments } from "./budget-parse.js";
+import { runBudgetArguments, budgetHelp } from "./budget.js";
 import { cliVersion, terminalWelcome } from "./welcome.js";
 import { isSetupArguments } from "./setup-parse.js";
 import { runSetupArguments } from "./setup.js";
@@ -208,7 +210,7 @@ async function main() {
   const args = process.argv.slice(2);
   process.stderr.write(terminalWelcome(Boolean(process.stdin.isTTY && process.stderr.isTTY), args));
   if (args.length === 1 && args[0] === "--help") {
-    process.stdout.write(help);
+    process.stdout.write(help + budgetHelp);
     return;
   }
   if (args.length === 1 && args[0] === "--version") {
@@ -216,6 +218,14 @@ async function main() {
     return;
   }
   const prompts = terminalPrompts();
+  if (isBudgetArguments(args)) {
+    try {
+      await runBudgetArguments(args, prompts);
+    } finally {
+      prompts.close();
+    }
+    return;
+  }
   if (isSetupArguments(args)) {
     try {
       await runSetupArguments(args, prompts);
