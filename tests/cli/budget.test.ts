@@ -114,7 +114,7 @@ it("labels preview and activation confirmation JSON without saving derived categ
   const json = run(["show", "--month", month]);
   expect(json.status, json.stderr).toBe(0);
   expect(JSON.parse(json.stdout).month.categories[0].categoryId).toBe("category-17");
-});
+}, 30_000);
 it("activates explicit facts privately then assigns, shows, and retries without exports", async () => {
   const f = temporaryDatabase();
   fixtures.push(f);
@@ -206,7 +206,7 @@ it("activates explicit facts privately then assigns, shows, and retries without 
   ]);
   expect(assign.status, assign.stderr).toBe(0);
   expect(JSON.parse(run(commitArgs).stdout).reused).toBe(true);
-});
+}, 30_000);
 it("rejects a replaced same-ID database and keeps JSON prompt-free", async () => {
   const f = temporaryDatabase();
   fixtures.push(f);

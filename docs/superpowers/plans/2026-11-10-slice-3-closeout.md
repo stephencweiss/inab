@@ -29,6 +29,10 @@ Final local results on November 10:
 
 The worktree uses Node.js 24.16.0 and pinned dependencies. Commit and push use the installed hooks without bypasses; publication outcomes belong in the pull request validation record. Tests and demo data are synthetic; no household database was opened for these checks.
 
+## CI workflow deadlines
+
+The first pull-request CI run reported three default five-second test timeouts: the account lifecycle and two budget CLI workflows. Each test starts multiple fresh CLI processes. Their assertions remain intact; those three tests now use an explicit 30-second workflow deadline, matching the existing workflow-map budget. Each CLI process retains its 10-second timeout, other test deadlines remain unchanged, and no hook is bypassed. The rerun result belongs in the pull request's validation record.
+
 ## Publication
 
 Target branch: `codex/slice-3-envelope-budget`; base: `main`. Push and pull request creation are authorized. Remote CI and merge status must be checked separately from local results.

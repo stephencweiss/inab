@@ -80,7 +80,7 @@ it("creates, lists, inspects, renames, and corrects an account across CLI restar
   expect(corrected.status, corrected.stderr).toBe(0);
   expect(JSON.parse(corrected.stdout).account).toMatchObject({ id, revision: 3, openingCents: 0 });
   expect(run(["show", "Synthetic", "--json"]).status).toBe(3);
-});
+}, 30_000);
 it("Tracking has no opening pair or recorded balance", async () => {
   const { run } = await setup();
   const added = run([
