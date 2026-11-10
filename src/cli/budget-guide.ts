@@ -46,6 +46,7 @@ type Questions = {
   yes: (label: string, help: string) => Promise<boolean>;
   date: (label: string, help: string) => Promise<string>;
   pick: (label: string, choices: string[], help: string) => Promise<string>;
+  confirmPick: (label: string, choices: string[], current: string, help: string) => Promise<string>;
 };
 function questions(
   review: BudgetReview,
@@ -94,13 +95,15 @@ function questions(
     parse: (value: string) => T,
     help: string,
     automatic: string | null = null,
+    normalize: (value: string) => string = (value) => value,
   ): Promise<T> {
     for (;;) {
       const stored = current.answers[cursor] ?? null;
       inspectSaved(label, stored);
-      const value =
+      const entered =
         stored ?? automatic ?? (await prompts.ask(`${label} (help, back, quit, abandon): `)).trim();
-      if (control(value, help)) continue;
+      if (control(entered, help)) continue;
+      const value = normalize(entered);
       let result: T;
       try {
         result = parse(value);
@@ -194,8 +197,34 @@ function questions(
         },
         `${help}\nChoose one listed value exactly: ${choices.join(" | ")}.`,
       ),
+    confirmPick: (label, choices, current, help) =>
+      input(
+        `${label}; Enter confirms, or type a full account ID`,
+        (value) => {
+          if (!choices.includes(value)) throw new Error("Select a listed Credit account ID");
+          return value;
+        },
+        `${help}\nPress Enter to accept ${current}, or enter a full Credit account ID: ${choices.join(" | ")}.`,
+        null,
+        (value) => value || current,
+      ),
   };
   return { q, current: () => current };
+}
+function linkedCreditAccount(q: Questions, snapshot: BudgetSnapshot) {
+  const accounts = snapshot.accounts.filter((account) => account.kind === "credit");
+  const choices = accounts.map((account) => account.id);
+  const proposed = accounts[0];
+  const help =
+    "Select the Credit account whose payments this category funds. Enter an account ID, not a shell variable name.";
+  if (proposed === undefined) return q.pick("Linked Credit account ID", choices, help);
+  const alternatives = accounts.length > 1 ? `; available IDs: ${choices.join(" | ")}` : "";
+  return q.confirmPick(
+    `Linked Credit account ID [${proposed.name}: ${proposed.id}]${alternatives}`,
+    choices,
+    proposed.id,
+    help,
+  );
 }
 async function categories(q: Questions, snapshot: BudgetSnapshot, reviewId: string) {
   const count = await q.count(
@@ -221,13 +250,7 @@ async function categories(q: Questions, snapshot: BudgetSnapshot, reviewId: stri
       `Is ${name} a card payment reserve (cash set aside to pay one Credit account)?`,
       "Choose yes for a category that holds cash for payments to one Credit account. Choose no for a spending category.",
     );
-    const cardAccountId = card
-      ? await q.pick(
-          "Linked Credit account ID",
-          snapshot.accounts.filter((a) => a.kind === "credit").map((a) => a.id),
-          "Select the Credit account whose payments this category funds. Paste its listed account ID, not a shell variable name.",
-        )
-      : null;
+    const cardAccountId = card ? await linkedCreditAccount(q, snapshot) : null;
     const availableCents = await q.money(
         `Opening Available for ${name}`,
         "Enter the funds in this category when the start month begins, after prior-month rollover. Do not include assignments or spending from the start month. A card payment reserve is cash set aside for that card.",

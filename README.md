@@ -2,9 +2,9 @@
 
 A personal envelope-budgeting app for one household. Terminal first; protected family web access later.
 
-Status: Slices 1 and 2 provide local account workflows and setup migration. The user reports local migration complete. Slice 3 adds budget activation, categories, assignments, spending allocation, transfers, and card payment reserves. Slice 3 manual review is pending.
+Status: Slices 1 and 2 provide local account workflows and setup migration. The user reports local migration complete. Slice 3 adds budget activation, categories, assignments, spending allocation, transfers, and card payment reserves. The user completed Slice 3 manual review on November 10, 2026.
 
-Next: run the [Slice 3 demo](docs/slice-3-demo.md) and review the [accounting examples](docs/budget-examples.md). Keep household activation separate from synthetic checks.
+Next: publish and review the Slice 3 pull request. The [demo](docs/slice-3-demo.md), [accounting examples](docs/budget-examples.md), and [closeout record](docs/superpowers/plans/2026-11-10-slice-3-closeout.md) record scope and verification. Keep household activation separate from synthetic checks.
 
 Run `npm run inab -- --help` for command status. Terminal launches show an INAB banner; JSON, scripts, and version output stay plain. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
@@ -84,6 +84,7 @@ New transactions are visibly unallocated until reviewed. Reports stay incomplete
 - [Keep database operations safe and atomic](docs/conventions/database-access-rules.md)
 - [Review migrations and verify recovery](docs/conventions/database-schema.md)
 - [Document and verify working user workflows](docs/conventions/feature-map.md)
+- [Explain demo goals before instructions](docs/conventions/demo-guides.md)
 - [Protect private data and bound agent work](docs/conventions/agent-safety.md)
 
 ## Record manual activity

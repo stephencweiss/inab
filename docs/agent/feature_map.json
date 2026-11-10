@@ -1781,6 +1781,8 @@
       "sourceFiles": [
         "src/cli/budget.ts",
         "src/cli/budget-activation.ts",
+        "src/cli/budget-preview.ts",
+        "src/cli/budget-render.ts",
         "src/cli/budget-guide.ts",
         "src/cli/budget-review-summary.ts",
         "src/cli/budget-editor.ts",

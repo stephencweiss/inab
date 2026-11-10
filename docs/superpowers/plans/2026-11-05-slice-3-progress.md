@@ -1,7 +1,7 @@
 # Slice 3 implementation progress
 
 Date: November 5, 2026.
-Status: implemented and verified locally. Independent specification and code-quality review found no remaining serious blockers. User manual review is pending.
+Status: implemented and verified locally. Independent specification and code-quality review found no remaining serious blockers. The user completed manual review on November 10, 2026; see the [closeout record](2026-11-10-slice-3-closeout.md).
 
 ## Scope and decisions
 
@@ -56,4 +56,8 @@ No household database or export was opened. No push, merge, deployment, or house
 | 6 | Private resumable review and atomic activation with exact retry receipts |
 | 7–9 | Categories, assignments, moves, allocations, existing-write integration, transfer corrections, and opening amendments |
 | 10–11 | Prompt-free scripts, readable reports, guided review, help/back/edit/abandon/resume, and separate confirmation |
-| 12 | Full checks, both built CLI demos, workflow map, recovery, and independent review passed; user manual review remains open |
+| 12 | Full checks, both built CLI demos, workflow map, recovery, and independent review passed; user manual review completed November 10, 2026 |
+
+## November 10 closeout
+
+The user confirmed all seven manual checklist items complete. The [closeout record](2026-11-10-slice-3-closeout.md) tracks follow-up changes, final verification, and publication separately from the November 5 evidence above.

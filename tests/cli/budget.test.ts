@@ -1,11 +1,120 @@
 import { readFileSync, copyFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
+import { runBudgetArguments } from "../../src/cli/budget.js";
+import { localToday } from "../../src/bootstrap.js";
 import { initializeDatabase } from "../../src/storage/database.js";
 import { temporaryDatabase } from "../helpers/database.js";
 import { runCli } from "../helpers/cli.js";
 const fixtures: ReturnType<typeof temporaryDatabase>[] = [];
 afterEach(() => fixtures.splice(0).forEach((f) => f.cleanup()));
+it("labels preview and activation confirmation JSON without saving derived category names", async () => {
+  const f = temporaryDatabase();
+  fixtures.push(f);
+  await initializeDatabase(f.path);
+  const run = (args: string[]) =>
+    runCli(["--db", f.path, "budget", ...args, "--json"], f.directory);
+  const fresh = runCli(["--db", f.path, "setup", "fresh", "--confirm", "--json"], f.directory);
+  expect(fresh.status, fresh.stderr).toBe(0);
+  const today = localToday();
+  const month = today.slice(0, 7);
+  const path = join(f.directory, "review.json");
+  const started = run(["activation", "start", "--month", month, "--review", path]);
+  expect(started.status, started.stderr).toBe(0);
+  const facts = {
+    startMonth: month,
+    currency: "USD",
+    opening: {
+      accounts: [],
+      categories: [{ categoryId: "category-17", availableCents: 0, evidence: "zero" }],
+      readyToAssignCents: 0,
+      evidence: "checked zero",
+      deficitAcknowledged: false,
+    },
+    categories: [
+      { id: "category-17", name: "Food", groupId: "Living", archived: false, cardAccountId: null },
+    ],
+    assignments: [{ month, categoryId: "category-17", amountCents: 0 }],
+    events: [],
+  };
+  const coverage = {
+    throughDate: today,
+    evidence: "no activity",
+    includedTransactionIds: [],
+    postedBridgeEventIds: [],
+  };
+  const set = run([
+    "activation",
+    "set",
+    "--review",
+    path,
+    "--expected-review",
+    "1",
+    "--decision",
+    JSON.stringify({ kind: "facts", facts, coverage }),
+  ]);
+  expect(set.status, set.stderr).toBe(0);
+  const result = run(["activation", "preview", "--review", path]);
+  expect(result.status, result.stderr).toBe(0);
+  const printed = JSON.parse(result.stdout);
+  const label = { categoryId: "category-17", categoryName: "Food" };
+  expect(printed.preview.after.opening.categories[0]).toMatchObject(label);
+  expect(printed.review.facts.assignments[0]).toMatchObject(label);
+  expect(printed.summary.after.months[0].categories[0]).toMatchObject(label);
+  const saved = readFileSync(path, "utf8");
+  expect(saved).not.toContain("categoryName");
+  const output: string[] = [];
+  const stderr = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+    output.push(String(chunk));
+    return true;
+  });
+  const stdout = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+  try {
+    await runBudgetArguments(
+      [
+        "--db",
+        f.path,
+        "budget",
+        "activation",
+        "commit",
+        "--review",
+        path,
+        "--expected-review",
+        String(printed.review.revision),
+      ],
+      {
+        interactive: true,
+        ask: async () => {
+          expect(output.join("")).toContain('"categoryName": "Food"');
+          return "no";
+        },
+      },
+    );
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining('"canceled":true'));
+  } finally {
+    stderr.mockRestore();
+    stdout.mockRestore();
+  }
+  expect(readFileSync(path, "utf8")).toBe(saved);
+  const committed = run([
+    "activation",
+    "commit",
+    "--review",
+    path,
+    "--expected-review",
+    String(printed.review.revision),
+    "--confirm",
+  ]);
+  expect(committed.status, committed.stderr).toBe(0);
+  const plain = runCli(["--db", f.path, "budget", "show", "--month", month], f.directory);
+  expect(plain.status, plain.stderr).toBe(0);
+  expect(plain.stdout).toMatch(/Category\s+\|\s+ID/);
+  expect(plain.stdout).toContain("Food");
+  expect(plain.stdout).toContain("category-17");
+  const json = run(["show", "--month", month]);
+  expect(json.status, json.stderr).toBe(0);
+  expect(JSON.parse(json.stdout).month.categories[0].categoryId).toBe("category-17");
+});
 it("activates explicit facts privately then assigns, shows, and retries without exports", async () => {
   const f = temporaryDatabase();
   fixtures.push(f);

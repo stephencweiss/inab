@@ -277,6 +277,7 @@ function mutate(
 function horizon(facts: BudgetFacts, today: string) {
   return facts.assignments.reduce((end, a) => (a.month > end ? a.month : end), today.slice(0, 7));
 }
+/** Past-month future commitments do not constrain income received later. Actual past deficits remain protected. */
 function fundingCheck(before: BudgetFacts, after: BudgetFacts, today: string): string | null {
   const end = horizon(after, today),
     old = calculateBudget(before, end),
@@ -287,7 +288,8 @@ function fundingCheck(before: BudgetFacts, after: BudgetFacts, today: string): s
   for (const month of next.months) {
     const previous = old.months.find((m) => m.month === month.month);
     if (
-      month.fundingDeficitCents > (previous?.fundingDeficitCents ?? 0) ||
+      (month.month >= today.slice(0, 7) &&
+        month.fundingDeficitCents > (previous?.fundingDeficitCents ?? 0)) ||
       month.readyToAssignCents < Math.min(previous?.readyToAssignCents ?? 0, 0)
     )
       return "insufficient-funds";

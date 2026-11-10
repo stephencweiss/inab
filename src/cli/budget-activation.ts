@@ -1,4 +1,8 @@
-import { budgetPreviewSummary } from "./budget-preview.js";
+import {
+  budgetPreviewSummary,
+  budgetPreviewForDisplay,
+  budgetFactsForDisplay,
+} from "./budget-preview.js";
 import { lstatSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { resolve } from "node:path";
@@ -123,9 +127,10 @@ export async function executeBudgetActivation(
       if (preview.baseline !== review.baseline) throw new Error("stale-review-baseline");
       const next = { ...review, revision: review.revision + 1, preview };
       writeBudgetReview(path, next);
+      const shown = budgetPreviewForDisplay(preview);
       return {
-        review: next,
-        preview,
+        review: { ...next, facts: budgetFactsForDisplay(review.facts), preview: shown },
+        preview: shown,
         summary: budgetPreviewSummary(app.inspect().state?.facts ?? null, preview.after, today),
       };
     });
@@ -187,7 +192,7 @@ function commitReview(
     if (!command.confirm) {
       if (command.json || !prompts.interactive) throw new Error("confirm-required");
       process.stderr.write(
-        `Target: ${command.database}\n${JSON.stringify(review.preview, null, 2)}\n${JSON.stringify(budgetPreviewSummary(app.inspect().state?.facts ?? null, review.preview.after, localToday()), null, 2)}\n`,
+        `Target: ${command.database}\n${JSON.stringify(budgetPreviewForDisplay(review.preview), null, 2)}\n${JSON.stringify(budgetPreviewSummary(app.inspect().state?.facts ?? null, review.preview.after, localToday()), null, 2)}\n`,
       );
       if (!(await confirm(prompts, "Activate this reviewed budget?"))) throw new PromptCancelled();
     }

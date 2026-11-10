@@ -12,7 +12,7 @@ From Food $100 and Ready to Assign $900, Cash spending of $150 gives Food -$50 a
 
 A $30 Cash income increases Ready to Assign by $30. A $20 category refund increases Food by $20. An unallocated $10 Cash outflow changes held funds and makes this and later reports incomplete until allocation is supplied.
 
-An assignment of $950 in January, viewed with October Ready to Assign $900, shows future commitments $950 and deficit $50. A correction that reduces October funds must recalculate that deficit. A write cannot create or increase it. Returning funds can reduce it.
+An assignment of $950 in January, viewed with October Ready to Assign $900, shows future commitments $950 and deficit $50. A correction that reduces October funds must recalculate that deficit. While October is current, an assignment write cannot create or increase this forecast deficit. Returning funds can reduce it.
 
 With Ready to Assign $100, November assignment $200, and December return of $100, October commitments are $200 and its funding deficit is $100. November Ready to Assign is -$100 and its deficit remains $100. December reaches zero. The December return cannot fund November.
 
@@ -23,6 +23,8 @@ If the $150 spending was on Credit, November Cash remains $1,000, Food opens at 
 ## Cards
 
 With Food $100, a funded card purchase of $60 gives Food $40, card debt $60, and reserve $60. A payment of $60 gives reserve zero and debt zero, with no second expense. Existing opening debt creates no reserve; assign funds directly to the payment category to cover it.
+
+With November Cash and Ready to Assign both $0, a $10 card purchase leaves debt $10 and reserve $0. December income of $10 supplies December Ready to Assign $10. Assigning $10 directly to the December card payment category gives reserve $10, shortfall $0, and Ready to Assign $0. It does not change November's actual funds or spending. Backdating that assignment to November is refused: December income cannot fund November.
 
 With positive card balance $50 and Food $100, a $70 purchase gives card debt $20, Food $30, and reserve $20. The first $50 uses positive held funds and has cash priority. Include the positive $50 in the opening held-funds equation.
 

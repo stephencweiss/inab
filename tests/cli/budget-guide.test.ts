@@ -29,6 +29,93 @@ const snapshot: BudgetSnapshot = {
   transactions: [],
   sourceRows: [],
 };
+describe("linked Credit account confirmation", () => {
+  it.each([
+    { ids: ["card-a"], choices: ["help", ""], expected: "card-a" },
+    { ids: ["card-a"], choices: ["card-a"], expected: "card-a" },
+    { ids: ["card-a", "card-b"], choices: ["card-b"], expected: "card-b" },
+    { ids: ["card-a", "card-b"], choices: ["unknown", "card-b"], expected: "card-b" },
+  ])("confirms or replaces the shown account: $choices", async ({ ids, choices, expected }) => {
+    const data: BudgetSnapshot = {
+      ...snapshot,
+      accounts: ids.map((id) => ({
+        id,
+        name: `Synthetic ${id}`,
+        kind: "credit",
+        currency: "USD",
+        openingCents: 0,
+        openingDate: "2026-10-31",
+        revision: 1,
+        createdAt: "2026-11-01T00:00:00.000Z",
+      })),
+    };
+    const answers = [
+      ...ids.flatMap(() => ["no", "0", "statement"]),
+      "1",
+      "Card payment",
+      "Cards",
+      "yes",
+      ...choices,
+      "quit",
+    ];
+    let saved = review;
+    const labels: string[] = [];
+    const output = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    try {
+      await expect(
+        guideBudgetActivation(
+          review,
+          data,
+          {
+            interactive: true,
+            ask: async (label) => {
+              labels.push(label);
+              const answer = answers.shift();
+              if (answer === undefined) throw new Error("unexpected prompt");
+              return answer;
+            },
+          },
+          "2026-11-05",
+          (value) => {
+            saved = value;
+          },
+        ),
+      ).rejects.toThrow();
+      const selection = labels.find((label) => label.startsWith("Linked Credit account ID"));
+      expect(selection).toContain("Enter");
+      expect(selection).toContain("Synthetic card-a");
+      expect(selection).toContain("card-a");
+      expect(saved.answers.at(-1)).toBe(expected);
+      expect(saved.answers).not.toContain("");
+      expect(saved.answers).not.toContain("help");
+
+      const resumed = ["continue", "quit"];
+      const resumedLabels: string[] = [];
+      await expect(
+        guideBudgetActivation(
+          saved,
+          data,
+          {
+            interactive: true,
+            ask: async (label) => {
+              resumedLabels.push(label);
+              const answer = resumed.shift();
+              if (answer === undefined) throw new Error("unexpected resume prompt");
+              return answer;
+            },
+          },
+          "2026-11-05",
+          () => {},
+        ),
+      ).rejects.toThrow();
+      expect(resumedLabels.some((label) => label.startsWith("Linked Credit account ID"))).toBe(
+        false,
+      );
+    } finally {
+      output.mockRestore();
+    }
+  });
+});
 describe("activation guide", () => {
   it("explains closed state and boundary evidence without changing saved choices during help", async () => {
     const writes: string[] = [];

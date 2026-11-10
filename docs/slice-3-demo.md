@@ -1,6 +1,24 @@
 # Slice 3 budget demo
 
-Status: implemented; user manual review is pending. All examples use synthetic USD values. Keep database and review files outside the checkout.
+Status: implemented; the user completed manual review on November 10, 2026. All examples use synthetic USD values. Keep database and review files outside the checkout.
+
+## What we want to check
+
+Slice 3 adds envelope budgeting to INAB's accounts, transactions, and imported history. Account balances show where the money is. Budget categories give that money a purpose, such as Food or a card payment. Ready to Assign is the money that still needs a purpose.
+
+This demo checks how those parts work together. We start with $1,000 in Cash and a card with no debt. We review the opening balances, assign money to Food, and check the funds left to spend. The automated path then follows a card purchase, a correction, a payment, and a month change. Spending should reduce the correct category once, and all remaining funds should agree with the account balances.
+
+Activation is the first step. It establishes the budget's starting month, opening funds, and activity through today. We deliberately start in October 2026 to check activation for an earlier month. The guided review asks for the opening values and each elapsed month's assignments. Saving that review prepares it for a separate preview and explicit activation command.
+
+We want to check both the calculated results and the user experience. A reader should understand each question, correct a mistake, leave and resume a draft, and see what will change before activation.
+
+## How to use this guide
+
+1. **Run the automated demo** to check the full accounting scenario for both fresh and migrated plans. It creates and removes its own temporary files and checks the expected results below.
+2. **Follow the manual review** to try the guided CLI yourself. It creates a separate demo database and stops after activation. Its expected balances differ from the automated demo because it has no purchases or payments yet. Try help, back, quit and resume, and JSON editing as you review the prompts. Abandon clears the answers if you want to start again.
+3. **Complete the user review checklist** at the end. Report unclear questions, unexpected results, or steps that prevent you from finishing. Passing automated checks alone does not complete this review.
+
+Scripted activation is an optional alternative to the guided review. You can skip it when following the manual path. The daily-command walkthrough adds one purchase after activation to check assignments and spending allocation; its correction commands are a reference. Start with the supplied manual answers to get a known result before trying other values.
 
 ## Automated demo
 
@@ -75,7 +93,7 @@ Use these answers. Accounts can appear in either order; use their displayed name
 | Food opening Available / evidence | `0.00` / `Confirmed zero` |
 | Category 2 name / group | `Card payment` / `cards` |
 | Is Card payment a card payment reserve? | `yes` |
-| Linked Credit account ID | Paste the printed Card ID value, without quotes; do not type `$CARD_ID` into the prompt |
+| Linked Credit account ID | Press Enter to confirm Synthetic card. To choose another listed Credit account, type its full ID; do not type `$CARD_ID` into the prompt |
 | Card payment opening Available / evidence | `0.00` / `Confirmed zero` |
 | Opening Ready to Assign / equation evidence | `1000.00` / `Synthetic opening equation` |
 | Acknowledge an opening deficit? | `no` |
@@ -107,7 +125,11 @@ printf '%s\n' "$PREVIEW_RESULT" | node -e 'const result = JSON.parse(require("no
 printf 'Review revision: %s\n' "$REVIEW_REVISION"
 ```
 
-Check that the opening difference is zero, account bridges are verified, and the calculated amounts match your answers. Preview does not activate the database. When ready, use the captured revision for a separate confirmation:
+Check that the opening difference is zero, account bridges are verified, and the calculated amounts match your answers. Preview does not activate the database.
+
+Preview and confirmation JSON include `categoryName` with category IDs in opening balances, assignments, spending allocations, and monthly totals. Use these names to check that the amounts belong to the intended categories.
+
+When ready, use the captured revision for a separate confirmation:
 
 ```sh
 npm run inab -- --db "${DB:?Set DB first}" budget activation commit --review "${REVIEW:?Set REVIEW first}" --expected-review "${REVIEW_REVISION:?Run preview first}" --confirm --json
@@ -116,13 +138,26 @@ npm run inab -- --db "${DB:?Set DB first}" budget show --month 2026-11
 
 Expected for this manual activation: Cash/held funds $1,000, Food Available $250, Ready to Assign $750, card balance $0, and payment reserve $0. This manual path has no purchase or payment yet. The automated demo's $195 Food / $945 Cash result also includes the corrected $55 purchase and payment.
 
+The text report aligns category names, full IDs, and amounts in a table, with card balances and reserves in a separate table. Text and JSON reports both preserve the full IDs required by later commands.
+
 Before confirming a different start state, inspect every opening amount and account bridge. An earlier start requires complete activity from that point. A later register opening balance alone does not prove an earlier budget balance. An old pending purchase needs an explicit opening-versus-later treatment. When included in opening, its amount must also be present in the reviewed opening working balance.
 
 Opening ordinary categories must be normalized after the preceding month rollover. Imported negative Available cannot be copied into the first month. Supply reviewed Cash/Credit overspending treatment and resolved opening values. Negative card reserves are allowed and stay visible.
 
-## Scripted activation format
+## Optional: activate from a script
 
-`budget activation set --review PATH --expected-review N --decision JSON` accepts this complete shape. Replace IDs with returned local IDs, and `throughDate` with today's local date. Include every elapsed category/month assignment, including confirmed zero values. This example has only one active month:
+**Skip this section if you completed the guided review and activation above.** It describes another way to supply the same reviewed facts. Scripts and automated tests can submit a complete JSON decision instead of answering each interactive question. This makes a known setup repeatable. Someone must still check the values and activity before supplying them.
+
+`budget` is a subcommand of INAB. In this repository, commands start with `npm run inab -- --db "$DB" budget …`; there is no separate `budget` executable.
+
+To try this alternative, create a separate demo database and accounts with manual step 1. Leave that database inactive. Save the JSON below to a file outside the checkout, for example:
+
+```sh
+DECISION_FILE="${DEMO_DIR:?Run manual step 1 for a new demo first}/activation-decision.json"
+vim "$DECISION_FILE"
+```
+
+Replace `CASH_ID` and `CARD_ID` in the JSON with the printed account IDs, and set `throughDate` to today's local date. Include every elapsed category/month assignment, including confirmed zero values. This example starts in November 2026 and has one active month. If today is in a later month, add assignments for each later month too.
 
 ```json
 {
@@ -162,7 +197,19 @@ Opening ordinary categories must be normalized after the preceding month rollove
 }
 ```
 
-All internal amounts are integer cents. An event is one of these complete shapes:
+After saving the file, start a new review for its start month and load the decision:
+
+```sh
+SCRIPT_REVIEW="${DEMO_DIR:?Set DEMO_DIR first}/scripted-budget-review.json"
+npm run inab -- --db "${DB:?Set DB first}" budget activation start --month 2026-11 --review "$SCRIPT_REVIEW"
+npm run inab -- --db "${DB:?Set DB first}" budget activation set --review "$SCRIPT_REVIEW" --expected-review 1 --decision "$(cat "${DECISION_FILE:?Save the decision JSON first}")"
+```
+
+These commands replace the guided review in manual step 2. `activation set` saves the decision in the review file; it does not activate the budget. Set `REVIEW="$SCRIPT_REVIEW"`, then follow manual step 3 to preview the values, capture the current review revision, and explicitly confirm activation. The revision `1` above applies to the newly started review.
+
+### Activity JSON reference
+
+The decision above has no activity. The following examples show event shapes for scripts that also need to supply reviewed purchases or transfers. They are reference data, not additional commands to run. All internal amounts are integer cents. Each item in `facts.events` has one of these complete shapes:
 
 ```json
 {
@@ -197,15 +244,201 @@ A live transfer must match its real legs. Historical imported transfers use `his
 
 ## Daily commands and corrections
 
-For these examples, replace `CATEGORY_ID` with the Food category ID from `budget show --month 2026-11 --json`. Interactive review generates this ID; it is not necessarily `food`.
+This optional walkthrough checks how daily budgeting works after activation:
 
-`budget status` returns the current budget revision. Every write requires that revision. Transaction allocation also requires the transaction revision. `budget assign --amount` sets the month's Assigned total; it is not an increment.
+1. Changing Assigned replaces a month's total instead of adding the same funds again.
+2. A new purchase appears as unallocated, and the report shows that allocation is incomplete.
+3. Allocating the purchase reduces the intended category once and makes the report complete again.
+
+Start from the activated manual example: Cash $1,000, Food Available $250, and Ready to Assign $750. The commands change November's assignment and record a $25 Cash purchase. Run the purchase block once; repeating it creates another purchase.
+
+This short walkthrough covers assignments and spending allocation. Continue with **Finish the four manual checks** below to check clearing, shortfalls, corrections across months, and restore. The other operations section is a reference.
+
+### Find account, category, and transaction IDs
+
+These commands read the Cash account's full ID and find the category named Food, ignoring case. The Food lookup stops if there is no match or more than one match. If you renamed Food or added Cash accounts, inspect the JSON and select the intended full IDs instead.
 
 ```sh
-npm run inab -- --db "$DB" budget assign --month 2026-11 --category CATEGORY_ID --amount 200.00 --expected-version N --confirm --json
-npm run inab -- --db "$DB" budget allocate TRANSACTION_ID --category CATEGORY_ID --expected-transaction-version T --expected-version N --confirm --json
+CASH_ID="$(npm run --silent inab -- --db "${DB:?Set DB first}" account list --json | node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).accounts.find(a => a.kind === "cash").id')"
+FOOD_ID="$(npm run --silent inab -- --db "${DB:?Set DB first}" budget show --month 2026-11 --json | node -e '
+const categories = JSON.parse(require("node:fs").readFileSync(0, "utf8")).categories;
+const matches = categories.filter(c => c.name.toLowerCase() === "food");
+if (matches.length !== 1) throw new Error("Expected one Food category. Inspect budget show --json and select its full ID.");
+console.log(matches[0].id);
+')"
+printf 'Cash ID: %s\nFood category ID: %s\n' "$CASH_ID" "$FOOD_ID"
+
+npm run inab -- --db "$DB" register "${CASH_ID:?Read the Cash account ID first}" --json
+npm run inab -- --db "$DB" budget status --json
+```
+
+Shell assignments such as `FOOD_ID="$(...)"` capture output without printing it. The `printf` above displays the selected IDs. To check a saved value later, run `printf '%s\n' "$FOOD_ID"`. Names and group values normally require exact matches; this Food lookup ignores case. A group can contain several categories, so a group alone does not identify Food.
+
+The register returns transaction IDs as `entries[].id` and transaction revisions as `entries[].revision`. An empty `entries` list means that account has no transactions yet. The activation walkthrough creates accounts and a budget, but no purchases.
+
+Budget revisions and transaction revisions are separate numbers. `budget status` returns the current budget `revision`. Earlier examples used `N` for this number and `T` for a transaction revision; these were placeholders, not valid arguments. The commands below read the actual values.
+
+### Change November's assignment
+
+This helper reads the current budget revision before each budget write. `budget assign --amount` sets the month's Assigned total; it is not an increment. Changing November from $50 to $200 adds $150 to Food.
+
+```sh
+demo_budget_revision() {
+  npm run --silent inab -- --db "${DB:?Set DB first}" budget status --json |
+    node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).revision'
+}
+
+npm run inab -- --db "$DB" budget assign --month 2026-11 --category "${FOOD_ID:?Read the Food category ID first}" --amount 200.00 --expected-version "$(demo_budget_revision)" --confirm --json
+```
+
+Expected: Food Available $400 and Ready to Assign $600. Cash remains $1,000.
+
+### Create a purchase and allocate it
+
+Create one uncleared $25 Cash purchase. Capture the transaction ID and revision from the result, then inspect the unallocated activity:
+
+```sh
+TRANSACTION_JSON="$(npm run --silent inab -- --db "${DB:?Set DB first}" transaction add --account "${CASH_ID:?Read the Cash account ID first}" --date 2026-11-02 --amount -25.00 --payee "Synthetic groceries" --confirm --json)"
+TRANSACTION_ID="$(printf '%s\n' "$TRANSACTION_JSON" | node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).transaction.id')"
+TRANSACTION_REVISION="$(printf '%s\n' "$TRANSACTION_JSON" | node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).transaction.revision')"
+printf 'Transaction ID: %s\nTransaction revision: %s\n' "$TRANSACTION_ID" "$TRANSACTION_REVISION"
+
 npm run inab -- --db "$DB" budget activity --month 2026-11 --unallocated --json
 ```
+
+Expected: the purchase appears as unallocated, and the budget report is incomplete until you allocate it. Adding a transaction also changes the budget revision, so read that revision again before allocation:
+
+```sh
+npm run inab -- --db "$DB" budget allocate "${TRANSACTION_ID:?Create the purchase first}" --category "${FOOD_ID:?Read the Food category ID first}" --expected-transaction-version "${TRANSACTION_REVISION:?Read the transaction revision first}" --expected-version "$(demo_budget_revision)" --confirm --json
+npm run inab -- --db "$DB" budget activity --month 2026-11 --unallocated --json
+npm run inab -- --db "$DB" budget show --month 2026-11
+```
+
+Expected: no unallocated events remain, Food Available is $375, Ready to Assign is $600, and Cash/held funds are $975. To find the transaction again later, read the Cash register. Use its latest transaction revision if another operation has changed it.
+
+## Finish the four manual checks
+
+Run these checks in order on the synthetic demo database, after the $25 purchase walkthrough. Reuse the same terminal and its `DB`, `CASH_ID`, `FOOD_ID`, `TRANSACTION_ID`, and `demo_budget_revision` values. The starting report must show Food Available $375, Ready to Assign $600, Cash/held funds $975, and complete allocation. The Cash purchase is still uncleared. If your starting values differ, check which earlier steps you ran before continuing. Run each purchase block once.
+
+Create a private directory for comparison reports and define a helper that reads a transaction's current revision. Its arguments are the account ID and transaction ID:
+
+```sh
+CHECK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/inab-slice-3-checks.XXXXXX")"
+printf 'Comparison reports and backup: %s\n' "$CHECK_DIR"
+
+demo_transaction_revision() {
+  npm run --silent inab -- --db "${DB:?Set DB first}" register "$1" --json |
+    node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).entries.find(t => t.id === process.argv[1]).revision' "$2"
+}
+
+npm run inab -- --db "$DB" budget show --month 2026-11
+```
+
+### Check 1: clearing counts the purchase once
+
+Save the November report, inspect the register, and clear the existing $25 purchase on November 3:
+
+```sh
+npm run --silent inab -- --db "$DB" budget show --month 2026-11 --json > "$CHECK_DIR/pending.json"
+npm run inab -- --db "$DB" register "$CASH_ID" --json
+npm run inab -- --db "$DB" transaction clear "${TRANSACTION_ID:?Complete the purchase walkthrough first}" --posted-on 2026-11-03 --expected-version "$(demo_transaction_revision "$CASH_ID" "$TRANSACTION_ID")" --confirm --json
+npm run inab -- --db "$DB" register "$CASH_ID" --json
+npm run inab -- --db "$DB" budget show --month 2026-11
+npm run --silent inab -- --db "$DB" budget show --month 2026-11 --json > "$CHECK_DIR/cleared.json"
+
+node -e '
+const fs = require("node:fs");
+const [before, after] = process.argv.slice(1).map(path => JSON.parse(fs.readFileSync(path, "utf8")));
+require("node:assert/strict").deepStrictEqual(before.month, after.month);
+console.log("PASS: clearing preserved every November budget total");
+' "$CHECK_DIR/pending.json" "$CHECK_DIR/cleared.json"
+```
+
+**Pass:** the register has the same transaction ID once. Its `postedOn` becomes `2026-11-03`. Cleared Cash changes from $1,000 to $975, and uncleared Cash changes from -$25 to $0. Working Cash stays $975. Food stays $375 and Ready to Assign stays $600. The comparison prints `PASS`; it compares calculated month values because the write advances the budget revision.
+
+### Check 2: unallocated spending and a card shortfall stay visible
+
+Create an uncleared $385 card purchase dated November 4. Food has $375 available, so this purchase will exceed its funds by $10. These commands find the demo's single Credit account and capture the new transaction ID:
+
+```sh
+CARD_ID="$(npm run --silent inab -- --db "$DB" account list --json | node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).accounts.find(a => a.kind === "credit").id')"
+CHECK_CARD_JSON="$(npm run --silent inab -- --db "$DB" transaction add --account "$CARD_ID" --date 2026-11-04 --amount -385.00 --payee "Synthetic card check" --confirm --json)"
+CHECK_CARD_TXN_ID="$(printf '%s\n' "$CHECK_CARD_JSON" | node -p 'JSON.parse(require("node:fs").readFileSync(0, "utf8")).transaction.id')"
+printf 'Card purchase ID: %s\n' "$CHECK_CARD_TXN_ID"
+npm run inab -- --db "$DB" budget activity --month 2026-11 --unallocated --json
+npm run inab -- --db "$DB" budget show --month 2026-11
+```
+
+**First pass condition:** the purchase appears in the unallocated activity list. The report ends with `Unallocated:` and its ID, rather than claiming allocation is complete. Category totals are provisional while this activity is unallocated.
+
+Allocate it to Food, then inspect the shortfall:
+
+```sh
+npm run inab -- --db "$DB" budget allocate "$CHECK_CARD_TXN_ID" --category "$FOOD_ID" --expected-transaction-version "$(demo_transaction_revision "$CARD_ID" "$CHECK_CARD_TXN_ID")" --expected-version "$(demo_budget_revision)" --confirm --json
+npm run inab -- --db "$DB" budget activity --month 2026-11 --unallocated --json
+npm run inab -- --db "$DB" budget show --month 2026-11
+npm run inab -- --db "$DB" budget show --month 2026-12
+npm run --silent inab -- --db "$DB" budget show --month 2026-10 --json > "$CHECK_DIR/october-before-correction.json"
+```
+
+**Second pass condition:** the unallocated list is empty, while November shows Food Available -$10, Credit overspent $10, card balance -$385, payment reserve $375, and card Shortfall $10. Ready to Assign stays $600 and Cash/held funds stay $975. December still shows the $10 card shortfall. A complete allocation does not mean every purchase has funds reserved.
+
+The card's Shortfall is the debt without cash reserved for payment. The plan-level `funding deficit` stays zero in this case. Reading December calculates rollover; it does not create a transaction or close November.
+
+### Check 3: a correction changes November and later months
+
+Correct the synthetic card purchase from $385 to $20, keeping its November 4 date. First remove its allocation so the amount can change, then allocate the corrected amount to Food:
+
+```sh
+npm run inab -- --db "$DB" budget allocate "$CHECK_CARD_TXN_ID" --unallocated --expected-transaction-version "$(demo_transaction_revision "$CARD_ID" "$CHECK_CARD_TXN_ID")" --expected-version "$(demo_budget_revision)" --confirm --json
+npm run inab -- --db "$DB" transaction edit "$CHECK_CARD_TXN_ID" --date 2026-11-04 --amount -20.00 --payee "Synthetic card check" --memo "Corrected demo purchase" --expected-version "$(demo_transaction_revision "$CARD_ID" "$CHECK_CARD_TXN_ID")" --confirm --json
+npm run inab -- --db "$DB" budget allocate "$CHECK_CARD_TXN_ID" --category "$FOOD_ID" --expected-transaction-version "$(demo_transaction_revision "$CARD_ID" "$CHECK_CARD_TXN_ID")" --expected-version "$(demo_budget_revision)" --confirm --json
+npm run inab -- --db "$DB" budget show --month 2026-10
+npm run inab -- --db "$DB" budget show --month 2026-11
+npm run inab -- --db "$DB" budget show --month 2026-12
+npm run --silent inab -- --db "$DB" budget show --month 2026-10 --json > "$CHECK_DIR/october-after-correction.json"
+
+node -e '
+const fs = require("node:fs");
+const [before, after] = process.argv.slice(1).map(path => JSON.parse(fs.readFileSync(path, "utf8")));
+require("node:assert/strict").deepStrictEqual(before.month, after.month);
+console.log("PASS: the November correction left October unchanged");
+' "$CHECK_DIR/october-before-correction.json" "$CHECK_DIR/october-after-correction.json"
+```
+
+**Pass:** October is unchanged and the comparison prints `PASS`. November and December both show Food Available $355, Ready to Assign $600, Cash/held funds $975, card balance -$20, payment reserve $20, and Shortfall $0. The same card transaction ID remains in the register with a new revision. This proves that the corrected November amount also changes December's rollover. Reports are incomplete during the temporary unallocated step and complete after allocation.
+
+### Check 4: restored reports match the original
+
+Back up the current demo database and restore it to a new path. Restore uses `--from` and `--to`, without `--db`:
+
+```sh
+BACKUP_PATH="$CHECK_DIR/backup.sqlite"
+RESTORED_DB="$CHECK_DIR/restored.sqlite"
+npm run inab -- backup --db "$DB" --to "$BACKUP_PATH" --confirm --json
+npm run inab -- restore --from "$BACKUP_PATH" --to "$RESTORED_DB" --confirm --json
+
+for DEMO_MONTH in 2026-10 2026-11 2026-12; do
+  npm run --silent inab -- --db "$DB" budget show --month "$DEMO_MONTH" --json > "$CHECK_DIR/original-$DEMO_MONTH.json"
+  npm run --silent inab -- --db "$RESTORED_DB" budget show --month "$DEMO_MONTH" --json > "$CHECK_DIR/restored-$DEMO_MONTH.json"
+  node -e '
+const fs = require("node:fs");
+const [original, restored] = process.argv.slice(1).map(path => JSON.parse(fs.readFileSync(path, "utf8")));
+require("node:assert/strict").deepStrictEqual(original, restored);
+console.log("PASS: original and restored reports match for " + original.month.month);
+' "$CHECK_DIR/original-$DEMO_MONTH.json" "$CHECK_DIR/restored-$DEMO_MONTH.json"
+done
+```
+
+**Pass:** backup and restore succeed, and all three month comparisons print `PASS`. These compare the full JSON reports, including revisions, categories, complete IDs, and calculated values. Your `DB` variable still points to the original database. Keep the comparison directory until you finish the review. Mark the four checklist items only after you run the checks and see their pass conditions.
+
+## Funding a carried card shortfall
+
+If cash only becomes available in December, record and allocate that income in December. Assign enough of December's Ready to Assign to the card payment category. Do not change November's Food assignment to pretend the money existed then. For example, with $10 debt and no reserve from November, December income of $10 supplies Ready to Assign $10. A December payment-category assignment of $10 makes Ready to Assign $0, reserve $10, and shortfall $0. The debt remains until payment. `budget assign --amount` still sets the month's total.
+
+Current and future funding checks use cash already received. They do not reject December's actual funds merely because November lacked that cash. A later month's income cannot fund a backdated assignment that would make the earlier month's Ready to Assign negative.
+
+## Other operations reference
 
 Use repeatable `--line CATEGORY_ID:SIGNED_USD` for splits, `--income` for Ready to Assign treatment, or `--unallocated` for an explicit return to review. To correct an allocated transaction amount, first return it to unallocated, use the existing transaction edit command, then supply the corrected allocation. Reports remain incomplete during that sequence. Ordinary amount edits cannot retain an invalid old allocation.
 
@@ -217,12 +450,12 @@ Check help for required account revisions on transfers and category rename, arch
 
 ## User review checklist
 
-- [ ] The start month and opening evidence are clear.
-- [ ] Help does not save, back changes the prior answer, quit preserves progress, and abandon clears answers.
-- [ ] The Food and card values match the expected results for the chosen manual or automated path.
-- [ ] Pending and cleared views do not count spending twice.
-- [ ] Unallocated activity and funding shortfalls remain visible.
-- [ ] A correction changes the correct month and later months.
-- [ ] Restored reports match the original.
+- [x] The start month and opening evidence are clear.
+- [x] Help does not save, back changes the prior answer, quit preserves progress, and abandon clears answers.
+- [x] The Food and card values match the expected results for the chosen manual or automated path.
+- [x] Pending and cleared views do not count spending twice.
+- [x] Unallocated activity and funding shortfalls remain visible.
+- [x] A correction changes the correct month and later months.
+- [x] Restored reports match the original.
 
-Passing automated checks does not mark this manual review complete.
+The user confirmed all checklist items complete on November 10, 2026. Automated checks and the separate December-income regression are recorded in the [closeout record](superpowers/plans/2026-11-10-slice-3-closeout.md).

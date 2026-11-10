@@ -1,11 +1,12 @@
 # INAB document guide
 
-Status: local accounts and setup migration are implemented. The user reports local migration complete. Slice 3 budget workflows are implemented; manual review is pending. Start with the Slice 3 demo and accounting examples.
+Status: local accounts and setup migration are implemented. The user reports local migration complete. Slice 3 budget workflows are implemented. The user completed manual review on November 10, 2026. Start with the Slice 3 closeout record, demo, and accounting examples.
 
 ## Read these first
 
 | Document | Authority |
 | --- | --- |
+| [Slice 3 closeout](superpowers/plans/2026-11-10-slice-3-closeout.md) | User sign-off, final follow-up changes, verification, and publication status |
 | [Slice 3 demo](slice-3-demo.md) | Synthetic activation, allocation, card, correction, month, and recovery workflows |
 | [Budget examples](budget-examples.md) | Exact synthetic accounting results |
 | [CLI JSON output](decisions/2026-11-06-cli-json-output.md) | Accepted terminal indentation and compact pipe/file output |
