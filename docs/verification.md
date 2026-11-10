@@ -17,7 +17,7 @@ Prefer rules that fail automatically over instructions an agent must remember. E
 | Manual accounts and balances work without providers | Account create/list/show/rename/opening, atomic history, stale-write, row validation, pure balance, opening-boundary, transaction register/correction/clearing, overflow, and atomic audit tests, reconciliation comparison/evidence/reuse, derived register coverage, targeted correction invalidation, preserved evidence, approved check list rechecks, rollback after invalidation, dated Tracking observations, versioned snapshot correction, unique-date refusal, coherent last-known views, row validation, aggregate revision rechecks, and snapshot audit rollback are active | Partial | Slice 1 |
 | Imports preserve identity and commit atomically | Synthetic CSV/value checks, setup eligibility and legacy upgrade checks, review-file identity/locking, exact source row accounting, duplicate/zero preservation, Tracking selection/adjustment evidence, canonical live register validation, injected write rollback, concurrent confirmations, receipt reuse, CLI/history workflows, and backup/restore are installed | Active | Slice 2 |
 | Migrations and restore preserve data | Temporary database init/upgrade, history, rollback, constraints, private files, consistent backup/restore, complete record recovery, source preservation, exclusive publication, interruption cleanup, and unsupported-source rejection tests | Active | First persisted data |
-| Budget money remains correct | Accounting examples and invariant tests | Planned | Slice 3 |
+| Budget money remains correct | Synthetic accounting examples, normalized opening checks, Cash/Credit month rules, future commitments, source membership, stale writes, boundary corrections, transfer rollback, version-4 upgrade, and recovery tests are active | Verified locally; user manual review passed November 10, 2026 | Slice 3 |
 | Split amounts remain correct | Parent/allocation sum tests | Planned | First split support |
 | Documented workflows work | Feature-map schema, source reference, and exact terminal execution tests | Active for account, transaction, reconciliation, correction review, Tracking snapshots, and recovery | First working workflow |
 | Provider sync handles retries, updates, and manual overlap | Fixture-based adapter tests, reviewed matching, and pre-opening history tests | Planned | Slice 4 |
@@ -84,7 +84,7 @@ The [Slice 2 demo](slice-2-demo.md) runs the built CLI from a separate temporary
 
 Import sources and review files require explicit private paths outside the checkout. Resource limits and strict CSV/review schemas are tested. Source statuses remain distinct from posting evidence. Missing transfer/split relationships are warnings, and historical source totals remain distinct from live balance effects and revised adjustments. Date/amount/payee hashes do not define transaction identity.
 
-The two new migrations install setup/import storage and reviewed relationship/evidence guards. Current schema version is 4, derived from the validated migration ledger. Prior-schema upgrades retain accounts and audit history, classify an existing household as start-fresh complete, and preserve recovery backups. No reset operation or automatic household import is installed.
+The two new migrations install setup/import storage and reviewed relationship/evidence guards. That slice installed schema version 4. Current schema version is 7, including the three Slice 3 migrations, derived from the validated migration ledger. Prior-schema upgrades retain accounts and audit history, classify an existing household as start-fresh complete, and preserve recovery backups. No reset operation or automatic household import is installed.
 
 ### Guided migration review
 
@@ -143,3 +143,17 @@ Reopening an already imported review in text mode prints `Migration completed`, 
 The terminal splash uses the supplied slanted ASCII artwork, ANSI colors, the shared CLI version, and the INAB budgeting description. Version-dependent tests use the shared version value so a version change does not require editing display assertions.
 
 The installed/quick secret-hook policy cases use a 30-second test budget, matching the other real Git-hook tests. Each case runs three hooks; each subprocess retains its ten-second limit and all secret/private-path ordering assertions. A publication run exceeded Vitest's default five-second case limit, while the isolated assertions passed. The bounded case budget avoids treating process startup delays as a scanner failure.
+
+## Slice 3 budget checks
+
+The [budget examples](budget-examples.md) define the supported results. Tests cover opening conservation and normalization, exact signed splits, Cash/Credit overspending, multiple cards, positive card funds, refunds and payments, maximum cumulative future commitments, and month changes. Reports are bounded to 1,200 months. Missing allocations make results incomplete and block new assignments.
+
+Application/storage tests verify earlier activation, independent boundary evidence, explicit pending treatment, complete elapsed assignments, source/live deduplication, unique historical transfer membership, stale previews, retry receipts, and atomic rollback. Current budget account balances must agree with existing registers. History-only transfer edits cannot create register entries or silently remove source activity. Existing account/transaction commands advance affected budget revisions and preserve reconciliation review. Boundary changes leave a usable opening amendment path.
+
+Private activation files use bounded validated IO, owner-only permissions, locks, saved revisions, full baseline checks, and database/device/inode identity. Terminal tests cover help, back, edit, abandon, resume, changed daily coverage, JSON without prompts, script errors, exact-cent reports, and separate final confirmation. The hand-edited feature map runs a synthetic budget workflow and restricts all database/review/recovery paths before execution.
+
+The [Slice 3 demo](slice-3-demo.md) runs the built CLI for both fresh and synthetic migrated plans, including a corrected card purchase, payment, month change, stale refusal, safe retry, and restore. The [progress record](superpowers/plans/2026-11-05-slice-3-progress.md) records actual full-check and demo results. Automated evidence does not close the user's manual review.
+
+## Slice 3 manual review and publication
+
+The user confirmed the full Slice 3 demo and all seven manual checklist items complete on November 10, 2026. The [closeout record](superpowers/plans/2026-11-10-slice-3-closeout.md) records the final prompt, display, documentation, and later-income funding changes and their verification. Local verification does not claim remote CI or merge completion.

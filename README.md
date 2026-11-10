@@ -2,11 +2,13 @@
 
 A personal envelope-budgeting app for one household. Terminal first; protected family web access later.
 
-Status: Slice 1 is implemented and pending user manual review. Local accounts, manual transactions, reconciliation and correction review, dated Tracking balances, and backup/restore work from the terminal. Private storage, migrations, and automated checks are installed.
+Status: Slices 1 and 2 provide local account workflows and setup migration. The user reports local migration complete. Slice 3 adds budget activation, categories, assignments, spending allocation, transfers, and card payment reserves. The user completed Slice 3 manual review on November 10, 2026.
 
-Next: run the [Slice 1 manual demo](docs/slice-1-demo.md) and review the [security check record](docs/slice-1-security-checks.md). Resolve any findings before household use. Slice 2 setup migration is implemented and verified locally. User manual review is pending; see the [Slice 2 demo](docs/slice-2-demo.md).
+Next: publish and review the Slice 3 pull request. The [demo](docs/slice-3-demo.md), [accounting examples](docs/budget-examples.md), and [closeout record](docs/superpowers/plans/2026-11-10-slice-3-closeout.md) record scope and verification. Keep household activation separate from synthetic checks.
 
 Run `npm run inab -- --help` for command status. Terminal launches show an INAB banner; JSON, scripts, and version output stay plain. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
+
+With `--json`, a terminal receives two-space indentation. Pipes and redirected files receive compact JSON. JSON errors use stderr's terminal state separately from stdout. Use `npm run --silent inab -- ... --json` when npm's command headers would interfere with parsing.
 
 Start with the [document guide](docs/README.md), [project design](docs/superpowers/specs/2026-10-17-inab-design.md), and [verification plan](docs/verification.md).
 
@@ -52,6 +54,24 @@ The exports do not supply bank posting dates, split parents, account classes, or
 
 Use `import history accounts`, `import history register ACCOUNT_ID`, `import history plan --month YYYY-MM`, and `import history report IMPORT_ID` to inspect the result. Import/history commands require the same explicit `--db`. Later YNAB imports are refused. To migrate again, create a new database and preserve the old one. See the [synthetic demo](docs/slice-2-demo.md) for a complete runnable example. Review files and exports stay outside the checkout.
 
+## Activate and use a budget
+
+After setup, start a separate reviewed budget activation. An earlier month is supported when its opening state and activity through today can be verified. Migration setup stays closed.
+
+```sh
+npm run inab -- --db /absolute/private/path/plan.sqlite budget activation start --month YYYY-MM --review /absolute/private/path/new-budget-review.json
+npm run inab -- --db /absolute/private/path/plan.sqlite budget activation review --review /absolute/private/path/new-budget-review.json --interactive
+npm run inab -- --db /absolute/private/path/plan.sqlite budget activation preview --review /absolute/private/path/new-budget-review.json --json
+npm run inab -- --db /absolute/private/path/plan.sqlite budget activation commit --review /absolute/private/path/new-budget-review.json --expected-review N --confirm --json
+npm run inab -- --db /absolute/private/path/plan.sqlite budget show --month YYYY-MM
+```
+
+Opening ordinary category balances must reflect the prior month rollover. Missing values, unresolved negative ordinary openings, missing activity, and unexplained balance differences block activation. The [demo guide](docs/slice-3-demo.md) gives complete script input and pending/bridge rules. Imported monthly values remain source history; only confirmed opening and assignment facts become active.
+
+Use `budget status` for the current revision. Category add/rename/archive/unarchive/reorder, `budget assign`, `budget move`, `budget allocate`, `budget transfer`, and `budget activity` use that revision and explicit confirmation. Assignment amounts set monthly totals. Transfers create or link equal opposite legs; card payments do not count spending twice. Cash/Tracking boundary flows keep Tracking snapshots separate. Credit advances and Credit/Credit transfers remain unsupported.
+
+New transactions are visibly unallocated until reviewed. Reports stay incomplete and new assignments wait until that activity is allocated. Amount edits with an existing split require an explicit return to unallocated and a replacement allocation. Opening changes or date changes across the active boundary require a reviewed opening amendment. Backdated changes recalculate later months. Future assignments cannot reuse committed funds.
+
 ## Conventions
 
 - [Maintain convention files and indexes](docs/conventions/writing-conventions.md)
@@ -64,6 +84,7 @@ Use `import history accounts`, `import history register ACCOUNT_ID`, `import his
 - [Keep database operations safe and atomic](docs/conventions/database-access-rules.md)
 - [Review migrations and verify recovery](docs/conventions/database-schema.md)
 - [Document and verify working user workflows](docs/conventions/feature-map.md)
+- [Explain demo goals before instructions](docs/conventions/demo-guides.md)
 - [Protect private data and bound agent work](docs/conventions/agent-safety.md)
 
 ## Record manual activity

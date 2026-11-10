@@ -1,3 +1,4 @@
+import { currentSchemaVersion } from "../helpers/schema-version.js";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { cpSync, existsSync, symlinkSync, writeFileSync } from "node:fs";
@@ -24,7 +25,11 @@ it("initializes and restarts from a different working directory with clean JSON"
   for (let index = 0; index < 2; index++) {
     const result = runCli(["--db", value.path, "init", "--confirm", "--json"], value.directory);
     expect(result.status).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ ok: true, database: value.path, schemaVersion: 4 });
+    expect(JSON.parse(result.stdout)).toEqual({
+      ok: true,
+      database: value.path,
+      schemaVersion: currentSchemaVersion,
+    });
     expect(result.stderr).toBe("");
   }
 });
@@ -53,7 +58,11 @@ it("runs the built CLI and bundled migration metadata from outside the repositor
       { cwd: value.directory, encoding: "utf8", timeout: 10_000 },
     );
     expect(result.status, result.stderr).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({ ok: true, database: value.path, schemaVersion: 4 });
+    expect(JSON.parse(result.stdout)).toEqual({
+      ok: true,
+      database: value.path,
+      schemaVersion: currentSchemaVersion,
+    });
   }
 }, 30_000);
 
@@ -87,5 +96,9 @@ it("migrates only an explicit existing database", () => {
   const result = runMigration(["--db", value.path]);
   expect(result.status).toBe(0);
   expect(result.stderr).toBe(`Migration target: ${value.path}\n`);
-  expect(JSON.parse(result.stdout)).toEqual({ ok: true, database: value.path, schemaVersion: 4 });
+  expect(JSON.parse(result.stdout)).toEqual({
+    ok: true,
+    database: value.path,
+    schemaVersion: currentSchemaVersion,
+  });
 });

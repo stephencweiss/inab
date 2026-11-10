@@ -7,6 +7,8 @@ import { temporaryDatabase } from "../helpers/database.js";
 import { parseArguments } from "../../src/cli/parse.js";
 import { isSetupArguments, parseSetupArguments } from "../../src/cli/setup-parse.js";
 import { runCli } from "../helpers/cli.js";
+import { isBudgetArguments, parseBudgetArguments } from "../../src/cli/budget-parse.js";
+import { localToday } from "../../src/bootstrap.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 function parseStrings(value: unknown): string[] {
@@ -16,6 +18,10 @@ function parseStrings(value: unknown): string[] {
 }
 function validateTarget(args: string[]) {
   if (args.length === 1 && (args[0] === "--help" || args[0] === "--version")) return;
+  if (isBudgetArguments(args)) {
+    validateBudgetTarget(args);
+    return;
+  }
   if (isSetupArguments(args)) {
     validateSetupTarget(args);
     return;
@@ -37,6 +43,16 @@ function validateTarget(args: string[]) {
   if (parsed.database === "${database}") return;
   if (parsed.database === "${restored}" && restoredReads.includes(parsed.action)) return;
   throw new Error("Temporary database target required");
+}
+function validateBudgetTarget(args: string[]) {
+  const parsed = parseBudgetArguments(args);
+  if (
+    parsed.database !== "${database}" &&
+    !(parsed.database === "${restored}" && ["show", "status", "activity"].includes(parsed.action))
+  )
+    throw new Error("Fixed temporary budget target required");
+  if (parsed.flags.has("--review") && parsed.flags.get("--review") !== "${budgetReview}")
+    throw new Error("Fixed temporary budget review required");
 }
 function validateSetupTarget(args: string[]) {
   const parsed = parseSetupArguments(args.map((arg) => (arg === "${reviewRevision}" ? "1" : arg)));
@@ -230,10 +246,13 @@ it.each(parseMap(JSON.parse(readFileSync(resolve(root, "docs/agent/feature_map.j
       ["database", fixture.path],
       ["backup", join(fixture.directory, "recovery", "backup.sqlite")],
       ["restored", join(fixture.directory, "restored", "plan.sqlite")],
+      ["budgetReview", join(fixture.directory, "budget-review.json")],
+      ["today", localToday()],
+      ["currentMonth", localToday().slice(0, 7)],
     ]);
     const substitute = (text: string) =>
       text.replace(
-        /\$\{(database|backup|restored|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision|registerCsv|planCsv|review|reviewRevision|sourceAccountKey|importAccountId|importId)\}/g,
+        /\$\{(database|backup|restored|accountId|revision|transactionId|transactionRevision|reconciliationId|snapshotId|snapshotRevision|registerCsv|planCsv|review|reviewRevision|sourceAccountKey|importAccountId|importId|budgetReview|today|currentMonth)\}/g,
         (_, key: string) => {
           const value = variables.get(key);
           if (value === undefined) throw new Error(`Missing captured variable: ${key}`);
@@ -361,4 +380,43 @@ it("restricts migration review and source paths to fixed synthetic fixtures", ()
       validateTarget(preview.map((v) => (v === key ? `${key}/../escape` : v))),
     ).toThrow();
   }
+});
+it("restricts budget review files and restored reads to fixed temporary paths", () => {
+  const args = [
+    "--db",
+    "${database}",
+    "budget",
+    "activation",
+    "start",
+    "--month",
+    "2026-11",
+    "--review",
+    "${budgetReview}",
+  ];
+  expect(() => validateTarget(args)).not.toThrow();
+  expect(() =>
+    validateTarget(args.map((a) => (a === "${budgetReview}" ? "/synthetic/other.json" : a))),
+  ).toThrow();
+  expect(() =>
+    validateTarget(args.map((a) => (a === "${database}" ? "/synthetic/other.sqlite" : a))),
+  ).toThrow();
+  expect(() =>
+    validateTarget(["--db", "${restored}", "budget", "show", "--month", "2026-11"]),
+  ).not.toThrow();
+  expect(() =>
+    validateTarget([
+      "--db",
+      "${restored}",
+      "budget",
+      "category",
+      "add",
+      "--name",
+      "Wrong",
+      "--group",
+      "Wrong",
+      "--confirm",
+      "--expected-version",
+      "1",
+    ]),
+  ).toThrow();
 });

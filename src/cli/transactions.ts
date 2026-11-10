@@ -1,3 +1,4 @@
+import { formatJson } from "./json.js";
 import { requireDatabase } from "./parse.js";
 import { resolve } from "node:path";
 import { transactionApplication } from "../bootstrap.js";
@@ -30,7 +31,7 @@ function render(entry: ManualTransaction, status = "cleared") {
   return `${entry.id} | revision ${entry.revision} | ${entry.occurredOn} | ${clearance} | USD ${formatCents(entry.cents)} | ${entry.payee} | ${entry.memo}`;
 }
 function output(json: boolean, result: object, text: string) {
-  process.stdout.write(json ? `${JSON.stringify(result)}\n` : `${text}\n`);
+  process.stdout.write(json ? `${formatJson(result)}\n` : `${text}\n`);
 }
 function previewFor(command: TerminalCommand, app: ReturnType<typeof transactionApplication>) {
   const id = command.id ?? "";

@@ -22,6 +22,7 @@ The latest user instruction takes precedence over repository guidance. State unr
 - [Keep database operations safe and atomic](docs/conventions/database-access-rules.md)
 - [Review migrations and verify recovery](docs/conventions/database-schema.md)
 - [Document and verify working user workflows](docs/conventions/feature-map.md)
+- [Explain demo goals before instructions](docs/conventions/demo-guides.md)
 - [Protect private data and bound agent work](docs/conventions/agent-safety.md)
 
 ## Working practices
@@ -32,6 +33,7 @@ The latest user instruction takes precedence over repository guidance. State unr
 - Before code changes, read the relevant interface, type, helper, and comment conventions.
 - Before database work, read both database conventions and the agent safety convention.
 - Before adding a workflow, read the feature map convention and verification guide.
+- Before creating or revising a demo guide, read `docs/conventions/demo-guides.md`.
 - Preserve unrelated work. Keep private data local. Use synthetic fixtures and temporary test databases.
 - Verify changed behavior and report evidence. Do not claim that planned tooling exists.
 - Record durable decisions in `docs/decisions/`. Keep dated plans in `docs/superpowers/plans/`.

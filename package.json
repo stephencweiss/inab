@@ -27,7 +27,8 @@
     "check:commit": "npm run check:documents && npm run check:tracked -- --staged && npm run check:secrets -- --staged && npm run check:commit-state && npm run lint && npm run typecheck && npm run test:unit",
     "check:push-state": "tsx scripts/check-git-state.ts push-clean",
     "check:push": "npm run check:push-state && npm run check && npm run check:tracked -- --tracked && npm run check:secrets -- --tracked && npm run check:secrets -- --staged && npm run check:secrets -- --history",
-    "demo:slice-2": "npm run build && tsx scripts/demo-slice-2.ts"
+    "demo:slice-2": "npm run build && tsx scripts/demo-slice-2.ts",
+    "demo:slice-3": "npm run build && tsx scripts/demo-slice-3.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -44,6 +44,8 @@ export type TransactionInput = Pick<
   "occurredOn" | "postedOn" | "cents" | "payee" | "memo"
 >;
 export type TransactionFailure =
+  | "linked-transfer"
+  | "budget-allocation-replacement-required"
   | "invalid-transaction"
   | "account-unavailable"
   | "transaction-unavailable"
@@ -65,6 +67,10 @@ export type TransactionPreview = {
   recordedAt: string;
 };
 export type TransactionSession = {
+  budgetGuard: (
+    before: ManualTransaction | null,
+    after: ManualTransaction,
+  ) => TransactionFailure | null;
   reconciliations: (id: string) => Reconciliation[];
   account: (id: string) => StoredAccount | null;
   get: (id: string) => ManualTransaction | null;
