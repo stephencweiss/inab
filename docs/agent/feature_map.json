@@ -20,7 +20,8 @@
         "src/application/ports.ts",
         "src/storage/accounts.ts",
         "src/storage/rows.ts",
-        "src/cli/prompt-errors.ts"
+        "src/cli/prompt-errors.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {
@@ -195,7 +196,8 @@
         "src/cli/prompts.ts",
         "src/application/transactions.ts",
         "src/storage/transactions.ts",
-        "src/cli/prompt-errors.ts"
+        "src/cli/prompt-errors.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {
@@ -450,7 +452,8 @@
         "src/storage/accounts.ts",
         "src/storage/transactions.ts",
         "src/cli/render.ts",
-        "src/cli/prompt-errors.ts"
+        "src/cli/prompt-errors.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {
@@ -937,7 +940,8 @@
         "src/storage/snapshots.ts",
         "src/storage/accounts.ts",
         "src/storage/rows.ts",
-        "src/cli/prompt-errors.ts"
+        "src/cli/prompt-errors.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {
@@ -1163,7 +1167,8 @@
         "src/cli/parse.ts",
         "src/application/backup.ts",
         "src/application/ports.ts",
-        "src/storage/backup.ts"
+        "src/storage/backup.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {
@@ -1371,7 +1376,8 @@
         "src/cli/prompt-errors.ts",
         "src/cli/migration-progress.ts",
         "src/cli/migration-issues.ts",
-        "src/cli/welcome.ts"
+        "src/cli/welcome.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {
@@ -1698,7 +1704,12 @@
       "id": "terminal.setup.fresh",
       "name": "Start fresh and close migration",
       "prerequisites": ["New temporary database and synthetic CSV fixtures."],
-      "sourceFiles": ["src/cli/setup.ts", "src/application/setup.ts", "src/storage/setup.ts"],
+      "sourceFiles": [
+        "src/cli/setup.ts",
+        "src/application/setup.ts",
+        "src/storage/setup.ts",
+        "src/cli/json.ts"
+      ],
       "steps": [
         {
           "command": "node --import tsx src/cli/main.ts",
@@ -1770,10 +1781,16 @@
       "sourceFiles": [
         "src/cli/budget.ts",
         "src/cli/budget-activation.ts",
+        "src/cli/budget-guide.ts",
+        "src/cli/budget-review-summary.ts",
+        "src/cli/budget-editor.ts",
+        "src/adapters/budget/editor.ts",
+        "src/adapters/budget/review-file.ts",
         "src/application/budget.ts",
         "src/storage/budget.ts",
         "src/storage/budget-hooks.ts",
-        "src/budget/calculate.ts"
+        "src/budget/calculate.ts",
+        "src/cli/json.ts"
       ],
       "steps": [
         {

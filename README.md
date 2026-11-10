@@ -8,6 +8,8 @@ Next: run the [Slice 3 demo](docs/slice-3-demo.md) and review the [accounting ex
 
 Run `npm run inab -- --help` for command status. Terminal launches show an INAB banner; JSON, scripts, and version output stay plain. `npm run build` creates the terminal entry point at `dist/cli/main.js`.
 
+With `--json`, a terminal receives two-space indentation. Pipes and redirected files receive compact JSON. JSON errors use stderr's terminal state separately from stdout. Use `npm run --silent inab -- ... --json` when npm's command headers would interfere with parsing.
+
 Start with the [document guide](docs/README.md), [project design](docs/superpowers/specs/2026-10-17-inab-design.md), and [verification plan](docs/verification.md).
 
 ## Initialize storage

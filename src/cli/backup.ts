@@ -1,3 +1,4 @@
+import { formatJson, writeJson } from "./json.js";
 import { recoveryApplication } from "../bootstrap.js";
 import type { RecoveryResult } from "../application/ports.js";
 import type { TerminalCommand } from "./parse.js";
@@ -6,7 +7,7 @@ import type { TerminalPrompts } from "./prompts.js";
 function unwrap<T>(result: RecoveryResult<T>, json: boolean) {
   if (result.ok) return result.value;
   process.exitCode = result.reason === "missing-source" ? 3 : 2;
-  throw new InvalidInput(json ? JSON.stringify(result) : result.message);
+  throw new InvalidInput(json ? formatJson(result, process.stderr) : result.message);
 }
 export async function executeRecovery(command: TerminalCommand, prompts: TerminalPrompts) {
   if (command.action !== "backup" && command.action !== "restore")
@@ -20,17 +21,14 @@ export async function executeRecovery(command: TerminalCommand, prompts: Termina
     `${command.action === "backup" ? "Backup" : "Restore"} source: ${preview.source}\nNew destination: ${preview.destination}\nSchema version: ${preview.schemaVersion}; no migration required\nOperation ID: ${preview.operationId}\n`,
   );
   if (!(await confirmWrite(command, prompts))) {
-    process.stdout.write(
-      command.json
-        ? `${JSON.stringify({ ok: true, canceled: true, operationId: null, destination: null })}\n`
-        : "Abandoned\n",
-    );
+    if (command.json) writeJson({ ok: true, canceled: true, operationId: null, destination: null });
+    else process.stdout.write("Abandoned\n");
     return;
   }
   const result = unwrap(await app.commit(preview), command.json);
-  process.stdout.write(
-    command.json
-      ? `${JSON.stringify({ ok: true, ...result })}\n`
-      : `Saved ${command.action}: ${result.destination}\nOperation ID: ${result.operationId}\n`,
-  );
+  if (command.json) writeJson({ ok: true, ...result });
+  else
+    process.stdout.write(
+      `Saved ${command.action}: ${result.destination}\nOperation ID: ${result.operationId}\n`,
+    );
 }

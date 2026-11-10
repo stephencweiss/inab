@@ -89,6 +89,8 @@ export async function executeBudgetActivation(
         revision: current.revision + 1,
         preview: null,
         answers: [],
+        answerThroughDate: today,
+        draft: null,
       };
     });
     return { review };
@@ -159,6 +161,8 @@ function startReview(
     coverage: null,
     preview: null,
     answers: [],
+    answerThroughDate: today,
+    draft: null,
   };
   createBudgetReview(path, review);
   return { review };

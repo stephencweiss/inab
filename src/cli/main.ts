@@ -1,3 +1,4 @@
+import { formatJson, writeJson } from "./json.js";
 import { isBudgetArguments } from "./budget-parse.js";
 import { runBudgetArguments, budgetHelp } from "./budget.js";
 import { cliVersion, terminalWelcome } from "./welcome.js";
@@ -89,7 +90,7 @@ function unwrap<T>(result: AccountResult<T>) {
   throw new InvalidInput(result.reason);
 }
 function output(json: boolean, value: object, text: string) {
-  process.stdout.write(json ? `${JSON.stringify(value)}\n` : `${text}\n`);
+  process.stdout.write(json ? `${formatJson(value)}\n` : `${text}\n`);
 }
 function createPreview(command: TerminalCommand, app: ReturnType<typeof accountApplication>) {
   if (command.action === "rename")
@@ -200,8 +201,15 @@ function reportFailure(error: Error | object, json: boolean) {
     return;
   }
   if (json && error instanceof RecoveryStorageError) {
-    process.stderr.write(
-      `${JSON.stringify({ ok: false, reason: "storage-failure", operationId: error.operationId, destination: error.destination, message: error.message })}\n`,
+    writeJson(
+      {
+        ok: false,
+        reason: "storage-failure",
+        operationId: error.operationId,
+        destination: error.destination,
+        message: error.message,
+      },
+      process.stderr,
     );
   } else process.stderr.write(`${error instanceof Error ? error.message : "Storage failure"}\n`);
   process.exitCode ||= error instanceof InvalidInput ? 2 : 1;

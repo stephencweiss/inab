@@ -1,4 +1,4 @@
-import { mkdtempSync, statSync, symlinkSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, statSync, symlinkSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it, expect } from "vitest";
@@ -13,6 +13,8 @@ describe("private budget activation review", () => {
     try {
       const review = {
         answers: [],
+        answerThroughDate: null,
+        draft: null,
         format: 1 as const,
         id: "review",
         revision: 1,
@@ -44,6 +46,35 @@ describe("private budget activation review", () => {
       symlinkSync(path, link);
       expect(() => readBudgetReview(link)).toThrow();
       expect(() => createBudgetReview(link, review)).toThrow();
+      const legacy = JSON.parse(readFileSync(path, "utf8"));
+      delete legacy.draft;
+      writeFileSync(path, JSON.stringify(legacy));
+      expect(readBudgetReview(path).draft).toBeNull();
+      const draft = {
+        facts: {
+          startMonth: "2026-10",
+          currency: "USD" as const,
+          opening: {
+            accounts: [],
+            categories: [],
+            readyToAssignCents: 0,
+            evidence: "reviewed zero",
+            deficitAcknowledged: false,
+          },
+          categories: [],
+          assignments: [],
+          events: [],
+        },
+        coverage: {
+          throughDate: "2026-11-05",
+          evidence: "no activity",
+          includedTransactionIds: [],
+          postedBridgeEventIds: [],
+        },
+      };
+      await updateBudgetReview(path, 2, (r) => ({ ...r, revision: 3, draft }));
+      expect(readBudgetReview(path).draft).toEqual(draft);
+      expect(readBudgetReview(path).facts).toBeNull();
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

@@ -70,10 +70,10 @@ Use these answers. Accounts can appear in either order; use their displayed name
 | Boundary balance for Synthetic card | `0.00` |
 | Independent boundary balance evidence | `Synthetic September statement` for each |
 | Number of categories, including card reserves | `2` |
-| Category 1 stable ID / name / group | `food` / `Food` / `living` |
+| Category 1 name / group | `Food` / `living` |
 | Is Food a card payment reserve? | `no` |
 | Food opening Available / evidence | `0.00` / `Confirmed zero` |
-| Category 2 stable ID / name / group | `payment` / `Card payment` / `cards` |
+| Category 2 name / group | `Card payment` / `cards` |
 | Is Card payment a card payment reserve? | `yes` |
 | Linked Credit account ID | Paste the printed Card ID value, without quotes; do not type `$CARD_ID` into the prompt |
 | Card payment opening Available / evidence | `0.00` / `Confirmed zero` |
@@ -86,7 +86,15 @@ Use these answers. Accounts can appear in either order; use their displayed name
 | Evidence of complete activity and assignments | `New synthetic accounts; no transactions` |
 | Save this completed review? | `yes` |
 
-Help repeats a question without saving; back removes dependent answers; abandon preserves saved choices. On resume, `continue` uses saved answers, `edit` changes a selected answer, and `done` leaves without activation. A completed review still needs preview and confirmation.
+INAB generates category IDs. A category name is its display name; a group collects related categories. The generated ID links assignments and activity even when you change the name. Existing reviews keep their IDs. Scripted JSON can still provide IDs such as `food` and `payment`.
+
+A **card payment reserve** is cash set aside to pay one Credit account. It is separate from the debt on that card. **Assigned** is the net amount moved into an envelope during the whole month. For example, opening Available of $100 plus Assigned of $200 minus spending of $60 gives Available of $240. Enter $200 as Assigned. A negative Cash balance or negative Ready to Assign is an opening deficit. Acknowledging it means you accept the starting shortfall; it does not add funds or correct the deficit.
+
+**Evidence** is a note about how you checked a value: for example, a dated statement, a previous plan balance, or a confirmed zero. For completeness, describe how you checked the register and each month's assignments through today. No file is attached. Use an honest note if a value is unchecked; `none` does not verify it. The guide prints the opening equation and its difference. The activation preview still checks the opening and account bridges.
+
+Help explains the current question and its accepted answers without saving. Closed-account help gives the exact boundary date. Balance evidence is a note describing the statement or other record you checked; it does not attach a file. Back removes dependent answers. Quit preserves progress and exits. Abandon clears all review answers and exits; it does not change the database. On resume, `continue` uses saved answers, `edit` lists questions with their answers, and `done` leaves without activation. Selecting an answer changes it and asks all later questions again. Selecting 1 starts the questions again. New reviews keep the date covered by their saved answers. An older unfinished review can ask for that original date before it replays answers. If the month has changed, the guide keeps earlier assignments and asks for missing months and fresh completeness notes.
+
+At the final review summary, **Yes** saves a completed review, **No** keeps an unfinished draft, and **Edit** opens just `facts` and `coverage` in Vim. JSON amounts are integer cents: `10000` means $100. Use `:wq` to return to the summary or `:cq` to cancel the edit. Invalid JSON or unknown fields leave saved choices unchanged. Valid edits are saved as a draft; they remain available after No or a later resume. Review identity, database binding, and revision fields are outside the editor. A completed review still needs preview and explicit confirmation.
 
 ### 3. Preview and confirm activation
 
@@ -189,11 +197,13 @@ A live transfer must match its real legs. Historical imported transfers use `his
 
 ## Daily commands and corrections
 
+For these examples, replace `CATEGORY_ID` with the Food category ID from `budget show --month 2026-11 --json`. Interactive review generates this ID; it is not necessarily `food`.
+
 `budget status` returns the current budget revision. Every write requires that revision. Transaction allocation also requires the transaction revision. `budget assign --amount` sets the month's Assigned total; it is not an increment.
 
 ```sh
-npm run inab -- --db "$DB" budget assign --month 2026-11 --category food --amount 200.00 --expected-version N --confirm --json
-npm run inab -- --db "$DB" budget allocate TRANSACTION_ID --category food --expected-transaction-version T --expected-version N --confirm --json
+npm run inab -- --db "$DB" budget assign --month 2026-11 --category CATEGORY_ID --amount 200.00 --expected-version N --confirm --json
+npm run inab -- --db "$DB" budget allocate TRANSACTION_ID --category CATEGORY_ID --expected-transaction-version T --expected-version N --confirm --json
 npm run inab -- --db "$DB" budget activity --month 2026-11 --unallocated --json
 ```
 
@@ -208,7 +218,7 @@ Check help for required account revisions on transfers and category rename, arch
 ## User review checklist
 
 - [ ] The start month and opening evidence are clear.
-- [ ] Help, back, abandon, and resume preserve the expected choices.
+- [ ] Help does not save, back changes the prior answer, quit preserves progress, and abandon clears answers.
 - [ ] The Food and card values match the expected results for the chosen manual or automated path.
 - [ ] Pending and cleared views do not count spending twice.
 - [ ] Unallocated activity and funding shortfalls remain visible.

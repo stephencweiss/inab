@@ -1,3 +1,4 @@
+import { writeJson } from "./json.js";
 import { budgetPreviewSummary } from "./budget-preview.js";
 import { renderBudgetReport } from "./budget-render.js";
 import { randomUUID } from "node:crypto";
@@ -108,19 +109,27 @@ export async function runBudgetArguments(args: string[], prompts: TerminalPrompt
       value = await execute(command, prompts);
     if (!json && command.action === "show" && "month" in value && "categories" in value)
       process.stdout.write(`${renderBudgetReport(value)}\n`);
-    else process.stdout.write(`${JSON.stringify({ ok: true, ...value }, null, json ? 0 : 2)}\n`);
+    else if (json) writeJson({ ok: true, ...value });
+    else process.stdout.write(`${JSON.stringify({ ok: true, ...value }, null, 2)}\n`);
   } catch (error) {
     if (error instanceof PromptCancelled) {
-      process.stdout.write(`${JSON.stringify({ ok: true, canceled: true })}\n`);
+      if (json) writeJson({ ok: true, canceled: true });
+      else process.stdout.write(`${JSON.stringify({ ok: true, canceled: true })}\n`);
       return;
     }
     const failure = parseFailure(error);
     process.exitCode = failure.code;
-    process.stderr.write(
-      json
-        ? `${JSON.stringify({ ok: false, reason: failure.reason, message: failure.message, operationId: /Operation ID: ([^.]+)\./.exec(failure.message)?.[1] ?? null })}\n`
-        : `${failure.message}\n`,
-    );
+    if (json)
+      writeJson(
+        {
+          ok: false,
+          reason: failure.reason,
+          message: failure.message,
+          operationId: /Operation ID: ([^.]+)\./.exec(failure.message)?.[1] ?? null,
+        },
+        process.stderr,
+      );
+    else process.stderr.write(`${failure.message}\n`);
   }
 }
 

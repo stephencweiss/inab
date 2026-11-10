@@ -14,18 +14,27 @@ export type TerminalPrompts = {
 export function terminalPrompts() {
   const interactive = Boolean(stdin.isTTY && stderr.isTTY);
   let readline: ReturnType<typeof createInterface> | null = null;
+  async function read(question: string, ask: typeof askReviewQuestion) {
+    if (!interactive)
+      throw new InvalidInput("Missing input; supply command flags in noninteractive mode");
+    readline ??= createInterface({ input: stdin, output: stderr });
+    return ask(readline, question);
+  }
   return {
     interactive,
-    ask: async (question: string) => {
-      if (!interactive)
-        throw new InvalidInput("Missing input; supply command flags in noninteractive mode");
-      readline ??= createInterface({ input: stdin, output: stderr });
-      return askTerminalQuestion(readline, question);
+    ask: (question: string) => read(question, askTerminalQuestion),
+    askReview: (question: string) => read(question, askReviewQuestion),
+    close: () => {
+      readline?.close();
+      readline = null;
     },
-    close: () => readline?.close(),
   };
 }
-export async function askTerminalQuestion(
+/** Releases the factory's readline session before an external editor takes terminal input. The next ask creates a new session. */
+export function releaseTerminal(prompts: TerminalPrompts) {
+  if ("close" in prompts && typeof prompts.close === "function") prompts.close();
+}
+export async function askReviewQuestion(
   readline: ReturnType<typeof createInterface>,
   question: string,
 ) {
@@ -38,9 +47,6 @@ export async function askTerminalQuestion(
       question.startsWith("--> ") ? question : `--> ${question}`,
       { signal: controller.signal },
     );
-    const control = answer.trim().toLowerCase();
-    if (control === "a" || control === "abandon" || control === "cancel")
-      throw new PromptCancelled();
     return answer;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") throw new PromptCancelled();
@@ -51,6 +57,28 @@ export async function askTerminalQuestion(
     readline.off("SIGINT", cancel);
     readline.off("close", cancel);
   }
+}
+
+/** Review controls must reach the review workflow so abandon can clear its saved answers. */
+export function reviewTerminalPrompts(prompts: TerminalPrompts): TerminalPrompts {
+  const ask = "askReview" in prompts ? prompts.askReview : null;
+  if (typeof ask !== "function") return prompts;
+  return {
+    ...prompts,
+    ask: async (question) => {
+      const value: unknown = await ask(question);
+      if (typeof value !== "string") throw new InvalidInput("Invalid terminal answer");
+      return value;
+    },
+  };
+}
+export async function askTerminalQuestion(
+  readline: ReturnType<typeof createInterface>,
+  question: string,
+) {
+  const answer = await askReviewQuestion(readline, question);
+  if (["a", "abandon", "cancel"].includes(answer.trim().toLowerCase())) throw new PromptCancelled();
+  return answer;
 }
 
 async function required(value: string | null, question: string, prompts: TerminalPrompts) {

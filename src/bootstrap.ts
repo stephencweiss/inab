@@ -99,3 +99,11 @@ export const {
 } = createBudgetReviewFiles(parseBudgetFacts);
 export { parseBudgetCoverage } from "./adapters/budget/review-file.js";
 export type { BudgetReview } from "./adapters/budget/review-file.js";
+import { createBudgetEditor } from "./adapters/budget/editor.js";
+import { parseBudgetCoverage } from "./adapters/budget/review-file.js";
+export const budgetDraftEditor = createBudgetEditor((value) => {
+  if (!("facts" in value) || !("coverage" in value)) throw new Error("invalid-editor-draft");
+  const facts = parseBudgetFacts(value.facts);
+  if (!facts.ok) throw new Error(facts.reason);
+  return { facts: facts.value, coverage: parseBudgetCoverage(value.coverage) };
+});

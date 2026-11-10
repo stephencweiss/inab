@@ -1,3 +1,4 @@
+import { formatJson, writeJson } from "./json.js";
 import { choice, confirm } from "./migration-questions.js";
 import { lstatSync } from "node:fs";
 import { setupApplication } from "../bootstrap.js";
@@ -8,7 +9,9 @@ import { executeImportHistory } from "./import-history.js";
 import { parseSetupArguments } from "./setup-parse.js";
 import type { SetupCommand } from "./setup-parse.js";
 function output(json: boolean, value: object) {
-  process.stdout.write(`${JSON.stringify({ ok: true, ...value }, null, json ? 0 : 2)}\n`);
+  process.stdout.write(
+    `${json ? formatJson({ ok: true, ...value }) : JSON.stringify({ ok: true, ...value }, null, 2)}\n`,
+  );
 }
 async function fresh(command: SetupCommand, prompts: TerminalPrompts) {
   const app = setupApplication(command.database);
@@ -102,10 +105,11 @@ export async function runSetupArguments(args: string[], prompts: TerminalPrompts
     const failed = parseFailure(error);
     process.exitCode = failed.code;
     const operation = failed.operationId === null ? "" : `; operation ${failed.operationId}`;
-    process.stderr.write(
-      json
-        ? `${JSON.stringify({ ok: false, reason: failed.reason, operationId: failed.operationId })}\n`
-        : `${failed.reason}${operation}\n`,
-    );
+    if (json)
+      writeJson(
+        { ok: false, reason: failed.reason, operationId: failed.operationId },
+        process.stderr,
+      );
+    else process.stderr.write(`${failed.reason}${operation}\n`);
   }
 }

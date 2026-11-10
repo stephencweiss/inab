@@ -8,7 +8,9 @@ Status: local accounts and setup migration are implemented. The user reports loc
 | --- | --- |
 | [Slice 3 demo](slice-3-demo.md) | Synthetic activation, allocation, card, correction, month, and recovery workflows |
 | [Budget examples](budget-examples.md) | Exact synthetic accounting results |
+| [CLI JSON output](decisions/2026-11-06-cli-json-output.md) | Accepted terminal indentation and compact pipe/file output |
 | [Budget rules](decisions/2026-11-04-envelope-budget-rules.md) | Accepted date, opening, Cash/Credit, reserve, and month rules |
+| [Activation review feedback](superpowers/plans/2026-11-06-activation-review-feedback.md) | Eight manual review problems, implemented changes, and verification |
 | [Slice 3 progress](superpowers/plans/2026-11-05-slice-3-progress.md) | Implementation evidence and remaining manual review |
 | [Slice 3 budget design](superpowers/specs/2026-11-04-slice-3-envelope-budget-design.md) | Approved budget activation, opening evidence, and accounting scope |
 | [Slice 3 implementation plan](superpowers/plans/2026-11-04-slice-3-envelope-budget.md) | Ordered implementation tasks and execution status |

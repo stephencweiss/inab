@@ -1,3 +1,4 @@
+import { formatJson } from "./json.js";
 import { requireDatabase } from "./parse.js";
 import { resolve } from "node:path";
 import { reconciliationApplication } from "../bootstrap.js";
@@ -33,7 +34,7 @@ function renderRecord(record: Reconciliation) {
   return `${record.id} | ${record.status}\n${render(record)}\nOpening USD ${formatCents(record.openingCents)} on ${record.openingDate}\nRecorded: ${record.recordedAt}\n${evidence}`;
 }
 function output(json: boolean, result: object, text: string) {
-  process.stdout.write(json ? `${JSON.stringify(result)}\n` : `${text}\n`);
+  process.stdout.write(json ? `${formatJson(result)}\n` : `${text}\n`);
 }
 export async function executeReconciliation(command: TerminalCommand, prompts: TerminalPrompts) {
   const app = reconciliationApplication(requireDatabase(command));

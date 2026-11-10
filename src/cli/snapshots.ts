@@ -1,3 +1,4 @@
+import { formatJson } from "./json.js";
 import { requireDatabase } from "./parse.js";
 import { resolve } from "node:path";
 import { snapshotApplication } from "../bootstrap.js";
@@ -29,7 +30,7 @@ function render(value: Snapshot) {
   return `${value.id} | revision ${value.revision} | ${value.effectiveDate} | USD ${formatCents(value.balanceCents)} | ${value.source} | observed ${value.observedAt}`;
 }
 function output(json: boolean, value: object, text: string) {
-  process.stdout.write(json ? `${JSON.stringify(value)}\n` : `${text}\n`);
+  process.stdout.write(json ? `${formatJson(value)}\n` : `${text}\n`);
 }
 export async function executeSnapshot(command: TerminalCommand, prompts: TerminalPrompts) {
   const app = snapshotApplication(requireDatabase(command));

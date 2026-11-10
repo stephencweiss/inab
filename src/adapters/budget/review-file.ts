@@ -1,3 +1,4 @@
+import { parseDate } from "../../lib/date.js";
 import { randomUUID } from "node:crypto";
 import {
   closeSync,
@@ -23,6 +24,7 @@ import type {
   BudgetResult,
 } from "../../application/budget-ports.js";
 type BudgetFacts = Extract<BudgetCommand, { kind: "activate" }>["facts"];
+export type BudgetDraft = { facts: BudgetFacts; coverage: BudgetCoverage };
 export type BudgetReview = {
   format: 1;
   id: string;
@@ -34,6 +36,8 @@ export type BudgetReview = {
   baseline: string;
   expectedBudgetRevision: number;
   answers: string[];
+  answerThroughDate: string | null;
+  draft: BudgetDraft | null;
   month: string;
   mode: "activate" | "amend-opening";
   facts: BudgetFacts | null;
@@ -115,10 +119,22 @@ export function createBudgetReviewFiles(parseFacts: (value: object) => BudgetRes
     if (!isPreview(value)) throw new Error("invalid-review");
     return value;
   }
+  function parseDraft(value: unknown): BudgetDraft | null {
+    if (value === undefined || value === null) return null;
+    if (!isRecord(value)) throw new Error("invalid-review-draft");
+    const facts = parseReviewFacts(value.facts);
+    if (facts === null) throw new Error("invalid-review-draft");
+    return { facts, coverage: parseBudgetCoverage(value.coverage) };
+  }
   function parseBudgetReview(value: unknown): BudgetReview {
     if (
       !isRecord(value) ||
       !isAnswers(value.answers) ||
+      !(
+        value.answerThroughDate === undefined ||
+        value.answerThroughDate === null ||
+        parseDate(value.answerThroughDate).ok
+      ) ||
       value.format !== 1 ||
       !isText(value.id) ||
       !isInteger(value.revision) ||
@@ -135,6 +151,9 @@ export function createBudgetReviewFiles(parseFacts: (value: object) => BudgetRes
     const preview = parseReviewPreview(value.preview);
     return {
       answers: value.answers,
+      answerThroughDate:
+        typeof value.answerThroughDate === "string" ? value.answerThroughDate : null,
+      draft: parseDraft(value.draft),
       format: 1,
       id: value.id,
       revision: value.revision,
